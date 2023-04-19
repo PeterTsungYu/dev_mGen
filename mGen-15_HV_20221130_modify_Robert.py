@@ -37,11 +37,16 @@ EndTi = 0
 SetCMD = 0
 RM = 40000000
 BatFCC = 6000000
+
+# stack current set, initial 18A 
 module1_CurSet = 180
 module2_CurSet = 180
 module3_CurSet = 180
-CurSet_HIGH = 40
+# stack current set 51A 
+CurSet_HIGH = 510
+# stack current set 85A 
 CurSet_HIGHEST = 850
+
 fuelConsume = 0
 UpdateDate = 0
 sysAuto = 0
@@ -375,7 +380,7 @@ def fell(n):
     dt = time.time() - t
     if dt < 0.005:return
     frep = 1 /dt
-    rpm = (freq / PULSE) * 60
+    rpm = (frep / PULSE) * 60
     t = time.time()
     
 def ModuleErrorSendGmail(): #錯誤訊息發Mail
