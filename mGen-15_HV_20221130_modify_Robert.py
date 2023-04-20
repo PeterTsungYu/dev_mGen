@@ -65,14 +65,25 @@ H3DataList = []
 DeviceKey = '921f0bcd727783e6aa9363a534d65c66b7218671e988be31cf352470833c8a8f'
 #-------------------------------------------------------------
 #-----------------GPIO Setting--------------------------------
-FuelPumControl = 17
-PowerRelayControl = 27
-BatDry = 22
-Leak = 23
-TACH = 24       # Fan's tachometer output pin
-OverFolwDry = 25
-PULSE = 2       # Noctua fans puts out two pluses per revolution
-FAN_PIN = 18            # PWM 控制腳位，設定成你想接的位置即可，注意是 BCM 編號
+FuelPumControl = 17                                                         # 3.3V DO
+PowerRelayControl = 27                                                      # 3.3V DO
+BatDry = 22                                                                 # 3.3V DI
+Leak = 23                                                                   # 3.3V DI
+TACH = 24       # Fan's tachometer output pin                               # ??DI
+OverFolwDry = 25                                                            # 3.3V DI
+FAN_PIN = 18            # PWM 控制腳位，設定成你想接的位置即可，注意是 BCM 編號 # PWM
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+GPIO.setup(TACH, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Pull up to 3.3V
+GPIO.setup(FAN_PIN, GPIO.OUT, initial=GPIO.LOW)
+GPIO.setup(Leak, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)# pull_up_down=GPIO.PUD_UP)
+GPIO.setup(OverFolwDry, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(BatDry, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(FuelPumControl, GPIO.OUT, initial=GPIO.HIGH)
+GPIO.setup(PowerRelayControl, GPIO.OUT, initial=GPIO.LOW)
+fan = GPIO.PWM(FAN_PIN,PWM_FREQ)
+#--------------------------------------------------------------
+PULSE = 2       # Noctua fans puts out two pluses per revolution           
 PV1V = 0
 PV1A = 0
 PV2V = 0
@@ -108,18 +119,6 @@ Temperature = [0x02,0x03,0x00,0x02,0x00,0x04,0xE5,0xFA]
 PV = [0x03,0x03,0x00,0x00,0x00,0x06,0xC4,0x2A]
 Arduino = [0x06,0x03,0x00,0x05,0x00,0x02,0xD5,0xBD]
 #ARM = [0x01,0x03,0x00,0xFF,0x00,0xFF,0x35,0xBA]
-#----------------------------------------------------------------
-#-----------------GPIO Setting---------------------------------
-GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
-GPIO.setup(TACH, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Pull up to 3.3V
-GPIO.setup(FAN_PIN, GPIO.OUT, initial=GPIO.LOW)
-GPIO.setup(Leak, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)# pull_up_down=GPIO.PUD_UP)
-GPIO.setup(OverFolwDry, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-GPIO.setup(BatDry, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-GPIO.setup(FuelPumControl, GPIO.OUT, initial=GPIO.HIGH)
-GPIO.setup(PowerRelayControl, GPIO.OUT, initial=GPIO.LOW)
-fan = GPIO.PWM(FAN_PIN,PWM_FREQ)
 #--------------------------------------------------------------
 #-----------------SMTP Config Gmail Sending--------------------
 GUser = 'phil@hipower.ltd'
@@ -953,52 +952,52 @@ while (internet_on):
         #----------------------------------------------------------------------------------------
     
         #------------------module3 data-------------------------------------------------------
-        try:
-            module3_data = get_module3_data(module3_IP)
-            module3_Requested_state = int.from_bytes(module3_data[20:21],byteorder='big')
-            if (module3_Requested_state == 2):
-                module3_Enable = 2
-            else:
-                module3_Enable = 1
-            module3_Start_possible = int.from_bytes(module3_data[21:22],byteorder='big')
-            module3_Stop_possible = int.from_bytes(module3_data[22:23],byteorder='big')
-            module3_Reset_possible = int.from_bytes(module3_data[23:24],byteorder='big')
-            module3_State = int.from_bytes(module3_data[24:25],byteorder='big')
-            if ((module3_State == 2) or (module3_State == 4) or (module3_State == 5) or (module3_State == 9)):
-                Module3_Request_start ='00'
-            elif(module3_State == 6):
-                Module3_Request_stop ='00'
-            #module3_Alert = module3_data[25:32]
-            #module3_Alertmessage = ''.join(['%02x' % b for b in module3_Alert])
-            #module3_Startup_count = (struct.unpack('f',(module3_data[32:36])))[0]
-            module3_TotalWattHour = ((struct.unpack('f',module3_data[36:40]))[0])*10
-            module3_TotalOperHour = ((struct.unpack('f',module3_data[40:44]))[0])*10
-            module3_TotalCycleWatt = ((struct.unpack('f',module3_data[44:48]))[0])*10
-            module3_TotalCycleHour = ((struct.unpack('f',module3_data[48:52]))[0])*10
-            module3_OutPutPower = (struct.unpack('f',module3_data[52:56]))[0]
-            if (module3_OutPutPower < 0):
-                module3_OutPutPower = 0
-            module3_OutPutVol = ((struct.unpack('f',module3_data[56:60]))[0])*10
-            module3_OutPutCur = ((struct.unpack('f',module3_data[60:64]))[0])*10
-            module3_StackPower = (struct.unpack('f',module3_data[64:68]))[0]
-            module3_StackVol = ((struct.unpack('f',module3_data[68:72]))[0])*10
-            module3_StackCur = ((struct.unpack('f',module3_data[72:76]))[0])*10
-            if (module3_StackCur <= 0):
-                module3_StackCur = 0
-            module3_StackTemp = ((struct.unpack('f',module3_data[76:80]))[0])*10
-            module3_StackCoolantPre = ((struct.unpack('f',module3_data[80:84]))[0])*10
-            module3_effic = (struct.unpack('f',module3_data[84:88]))[0]
-            #module3_FC_free_run = int.from_bytes(module3_data[96:97],byteorder='big')
-            #module3_Radiator_state = (struct.unpack('f',module3_data[100:104]))[0]
-        except:
-            print('module3 Get data error')
+        # try:
+        #     module3_data = get_module3_data(module3_IP)
+        #     module3_Requested_state = int.from_bytes(module3_data[20:21],byteorder='big')
+        #     if (module3_Requested_state == 2):
+        #         module3_Enable = 2
+        #     else:
+        #         module3_Enable = 1
+        #     module3_Start_possible = int.from_bytes(module3_data[21:22],byteorder='big')
+        #     module3_Stop_possible = int.from_bytes(module3_data[22:23],byteorder='big')
+        #     module3_Reset_possible = int.from_bytes(module3_data[23:24],byteorder='big')
+        #     module3_State = int.from_bytes(module3_data[24:25],byteorder='big')
+        #     if ((module3_State == 2) or (module3_State == 4) or (module3_State == 5) or (module3_State == 9)):
+        #         Module3_Request_start ='00'
+        #     elif(module3_State == 6):
+        #         Module3_Request_stop ='00'
+        #     #module3_Alert = module3_data[25:32]
+        #     #module3_Alertmessage = ''.join(['%02x' % b for b in module3_Alert])
+        #     #module3_Startup_count = (struct.unpack('f',(module3_data[32:36])))[0]
+        #     module3_TotalWattHour = ((struct.unpack('f',module3_data[36:40]))[0])*10
+        #     module3_TotalOperHour = ((struct.unpack('f',module3_data[40:44]))[0])*10
+        #     module3_TotalCycleWatt = ((struct.unpack('f',module3_data[44:48]))[0])*10
+        #     module3_TotalCycleHour = ((struct.unpack('f',module3_data[48:52]))[0])*10
+        #     module3_OutPutPower = (struct.unpack('f',module3_data[52:56]))[0]
+        #     if (module3_OutPutPower < 0):
+        #         module3_OutPutPower = 0
+        #     module3_OutPutVol = ((struct.unpack('f',module3_data[56:60]))[0])*10
+        #     module3_OutPutCur = ((struct.unpack('f',module3_data[60:64]))[0])*10
+        #     module3_StackPower = (struct.unpack('f',module3_data[64:68]))[0]
+        #     module3_StackVol = ((struct.unpack('f',module3_data[68:72]))[0])*10
+        #     module3_StackCur = ((struct.unpack('f',module3_data[72:76]))[0])*10
+        #     if (module3_StackCur <= 0):
+        #         module3_StackCur = 0
+        #     module3_StackTemp = ((struct.unpack('f',module3_data[76:80]))[0])*10
+        #     module3_StackCoolantPre = ((struct.unpack('f',module3_data[80:84]))[0])*10
+        #     module3_effic = (struct.unpack('f',module3_data[84:88]))[0]
+        #     #module3_FC_free_run = int.from_bytes(module3_data[96:97],byteorder='big')
+        #     #module3_Radiator_state = (struct.unpack('f',module3_data[100:104]))[0]
+        # except:
+        #     print('module3 Get data error')
         #----------------------------------------------------------------------------------------
         
             #handleFANspeed()
-        ModuleState = str(module1_State) +str(0) + str(module3_State)
-        ModuleTotalOutPut = module1_OutPutPower + module3_OutPutPower #+ module3_OutPutPower
+        ModuleState = str(module1_State) +str(0) + str(0)
+        ModuleTotalOutPut = module1_OutPutPower #+ module2_OutPutPower + module3_OutPutPower
         #print(ModuleTotalOutPut)
-        TotalkW = module1_TotalWattHour + module3_TotalWattHour #+ module3_TotalWattHour
+        TotalkW = module1_TotalWattHour #+ module2_TotalWattHour + module3_TotalWattHour
         #print(fuelLevel.voltage)
         FuelLevel = ((fuelLevel.voltage-3.44)/(1.48-3.44))*100#  0.83
         #if (FuelLevel <= 30):
@@ -1030,8 +1029,8 @@ while (internet_on):
         leaksensor2 = '0'
         leaksensor = '%s%s'%(leaksensor1,leaksensor2)
         SystemAlert ='%s%s%s%s'%('0','0','0',Overflow)
-        if (module1_State == 3 or module1_State == 4 or module1_State == 5 or module1_State == 6 or module1_State == 2 or module1_State == 9 or
-            module3_State == 3 or module3_State == 4 or module3_State == 5 or module3_State == 6 or module3_State == 2 or module3_State == 9 ):
+        if (module1_State == 3 or module1_State == 4 or module1_State == 5 or module1_State == 6 or module1_State == 2 or module1_State == 9):
+            #module3_State == 3 or module3_State == 4 or module3_State == 5 or module3_State == 6 or module3_State == 2 or module3_State == 9 ):
             #module2_State == 3 or module2_State == 4 or module2_State == 5 or module2_State == 6 or module2_State == 2 or module2_State == 9):
             GPIO.output(FuelPumControl, GPIO.HIGH)
             SysRunTimeStart = time.time()
@@ -1040,7 +1039,7 @@ while (internet_on):
                 SysRunTimeStop = time.time()
         else:
             GPIO.output(FuelPumControl, GPIO.LOW)
-        fuelConsume = ((module1_effic * module1_OutPutPower) * 0.9) + ((module3_effic * module3_OutPutPower) * 0.9) #+ ((module2_effic * module2_OutPutPower) * 0.9)
+        fuelConsume = ((module1_effic * module1_OutPutPower) * 0.9) #+ ((module3_effic * module3_OutPutPower) * 0.9) + ((module2_effic * module2_OutPutPower) * 0.9)
         fuelConsume = fuelConsume * 0.1
         #print(fuelConsume)
 #         if (module1_State == 8 or module2_State == 8 or leaksensor1 >= 1 or OutPutVol <= 2950 or T1 > 700 or T2 > 500 or FuelLevel <=0):# or module3_State == 8):
@@ -1104,15 +1103,15 @@ while (internet_on):
                         'PV2A':PV2A,
                         'PVT':PVT,
                         'PVC':2,
-                        'FC3TI':module3_TotalOperHour,
-                        'FC3OA':module3_OutPutCur,
-                        'FC3OW':module3_OutPutPower,
-                        'FC3SC':module3_TotalCycleHour,
-                        'FC3V':module3_StackVol,
-                        'FC3AC':module3_TotalWattHour,
-                        'FC3A':module3_StackCur,
-                        'FC3T':module3_StackTemp,
-                        'FC3P':module3_StackCoolantPre,
+                        # 'FC3TI':module3_TotalOperHour,
+                        # 'FC3OA':module3_OutPutCur,
+                        # 'FC3OW':module3_OutPutPower,
+                        # 'FC3SC':module3_TotalCycleHour,
+                        # 'FC3V':module3_StackVol,
+                        # 'FC3AC':module3_TotalWattHour,
+                        # 'FC3A':module3_StackCur,
+                        # 'FC3T':module3_StackTemp,
+                        # 'FC3P':module3_StackCoolantPre,
                         #'FC2OA':module2_OutPutCur,
                         'FC1OW':module1_OutPutPower,
                         #'FC2OW':module2_OutPutPower,
@@ -1139,7 +1138,8 @@ while (internet_on):
                         'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
                         #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
                         'FC3H':module3,
-                        'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)}
+                        #'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
+                        }
                     upload = requests.post(url,json = dataupload)
                     Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
                     DBsave.commit()
@@ -1190,15 +1190,15 @@ while (internet_on):
                         'PV2A':PV2A,
                         'PVT':PVT,
                         'PVC':2,
-                        'FC3TI':module3_TotalOperHour,
-                        'FC3OA':module3_OutPutCur,
-                        'FC3OW':module3_OutPutPower,
-                        'FC3SC':module3_TotalCycleHour,
-                        'FC3V':module3_StackVol,
-                        'FC3AC':module3_TotalWattHour,
-                        'FC3A':module3_StackCur,
-                        'FC3T':module3_StackTemp,
-                        'FC3P':module3_StackCoolantPre,
+                        # 'FC3TI':module3_TotalOperHour,
+                        # 'FC3OA':module3_OutPutCur,
+                        # 'FC3OW':module3_OutPutPower,
+                        # 'FC3SC':module3_TotalCycleHour,
+                        # 'FC3V':module3_StackVol,
+                        # 'FC3AC':module3_TotalWattHour,
+                        # 'FC3A':module3_StackCur,
+                        # 'FC3T':module3_StackTemp,
+                        # 'FC3P':module3_StackCoolantPre,
                         #'FC2OA':module2_OutPutCur,
                         'FC1OW':module1_OutPutPower,
                         #'FC2OW':module2_OutPutPower,
@@ -1225,7 +1225,8 @@ while (internet_on):
                         'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
                         #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
                         'FC3H':module3,
-                        'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)}
+                        # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
+                        }
                     upload = requests.post(url,json = dataupload)
                     Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
                     DBsave.commit()
@@ -1276,15 +1277,15 @@ while (internet_on):
                         'PV2A':PV2A,
                         'PVT':PVT,
                         'PVC':2,
-                        'FC3TI':module3_TotalOperHour,
-                        'FC3OA':module3_OutPutCur,
-                        'FC3OW':module3_OutPutPower,
-                        'FC3SC':module3_TotalCycleHour,
-                        'FC3V':module3_StackVol,
-                        'FC3AC':module3_TotalWattHour,
-                        'FC3A':module3_StackCur,
-                        'FC3T':module3_StackTemp,
-                        'FC3P':module3_StackCoolantPre,
+                        # 'FC3TI':module3_TotalOperHour,
+                        # 'FC3OA':module3_OutPutCur,
+                        # 'FC3OW':module3_OutPutPower,
+                        # 'FC3SC':module3_TotalCycleHour,
+                        # 'FC3V':module3_StackVol,
+                        # 'FC3AC':module3_TotalWattHour,
+                        # 'FC3A':module3_StackCur,
+                        # 'FC3T':module3_StackTemp,
+                        # 'FC3P':module3_StackCoolantPre,
                         #'FC2OA':module2_OutPutCur,
                         'FC1OW':module1_OutPutPower,
                         #'FC2OW':module2_OutPutPower,
@@ -1311,7 +1312,8 @@ while (internet_on):
                         'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
                         #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
                         'FC3H':module3,
-                        'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)}
+                        # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
+                        }
                     upload = requests.post(url,json = dataupload)
                     Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
                     DBsave.commit()
@@ -1362,15 +1364,15 @@ while (internet_on):
                         'PV2A':PV2A,
                         'PVT':PVT,
                         'PVC':2,
-                        'FC3TI':module3_TotalOperHour,
-                        'FC3OA':module3_OutPutCur,
-                        'FC3OW':module3_OutPutPower,
-                        'FC3SC':module3_TotalCycleHour,
-                        'FC3V':module3_StackVol,
-                        'FC3AC':module3_TotalWattHour,
-                        'FC3A':module3_StackCur,
-                        'FC3T':module3_StackTemp,
-                        'FC3P':module3_StackCoolantPre,
+                        # 'FC3TI':module3_TotalOperHour,
+                        # 'FC3OA':module3_OutPutCur,
+                        # 'FC3OW':module3_OutPutPower,
+                        # 'FC3SC':module3_TotalCycleHour,
+                        # 'FC3V':module3_StackVol,
+                        # 'FC3AC':module3_TotalWattHour,
+                        # 'FC3A':module3_StackCur,
+                        # 'FC3T':module3_StackTemp,
+                        # 'FC3P':module3_StackCoolantPre,
                         #'FC2OA':module2_OutPutCur,
                         'FC1OW':module1_OutPutPower,
                         #'FC2OW':module2_OutPutPower,
@@ -1397,7 +1399,8 @@ while (internet_on):
                         'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
                         #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
                         'FC3H':module3,
-                        'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)}
+                        # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
+                        }
                     upload = requests.post(url,json = dataupload)
                     Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
                     DBsave.commit()
@@ -1448,15 +1451,15 @@ while (internet_on):
                         'PV2A':PV2A,
                         'PVT':PVT,
                         'PVC':2,
-                        'FC3TI':module3_TotalOperHour,
-                        'FC3OA':module3_OutPutCur,
-                        'FC3OW':module3_OutPutPower,
-                        'FC3SC':module3_TotalCycleHour,
-                        'FC3V':module3_StackVol,
-                        'FC3AC':module3_TotalWattHour,
-                        'FC3A':module3_StackCur,
-                        'FC3T':module3_StackTemp,
-                        'FC3P':module3_StackCoolantPre,
+                        # 'FC3TI':module3_TotalOperHour,
+                        # 'FC3OA':module3_OutPutCur,
+                        # 'FC3OW':module3_OutPutPower,
+                        # 'FC3SC':module3_TotalCycleHour,
+                        # 'FC3V':module3_StackVol,
+                        # 'FC3AC':module3_TotalWattHour,
+                        # 'FC3A':module3_StackCur,
+                        # 'FC3T':module3_StackTemp,
+                        # 'FC3P':module3_StackCoolantPre,
                         #'FC2OA':module2_OutPutCur,
                         'FC1OW':module1_OutPutPower,
                         #'FC2OW':module2_OutPutPower,
@@ -1483,7 +1486,8 @@ while (internet_on):
                         'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
                         #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
                         'FC3H':module3,
-                        'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)}
+                        # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
+                        }
                     upload = requests.post(url,json = dataupload)
                     Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
                     DBsave.commit()
@@ -1500,7 +1504,7 @@ while (internet_on):
         if(UpdateDate == 1):
             print("I am here! UpdateDate == 1")
             try:
-                ModuleState = str(module1_State) + str(0) + str(module3_State)
+                ModuleState = str(module1_State) + str(0) + str(0)
                 print(ModuleState)
                 dataupload = {
                         'inTI':int(inTI),
@@ -1536,15 +1540,15 @@ while (internet_on):
                         'PV2A':PV2A,
                         'PVT':PVT,
                         'PVC':2,
-                        'FC3TI':module3_TotalOperHour,
-                        'FC3OA':module3_OutPutCur,
-                        'FC3OW':module3_OutPutPower,
-                        'FC3SC':module3_TotalCycleHour,
-                        'FC3V':module3_StackVol,
-                        'FC3AC':module3_TotalWattHour,
-                        'FC3A':module3_StackCur,
-                        'FC3T':module3_StackTemp,
-                        'FC3P':module3_StackCoolantPre,
+                        # 'FC3TI':module3_TotalOperHour,
+                        # 'FC3OA':module3_OutPutCur,
+                        # 'FC3OW':module3_OutPutPower,
+                        # 'FC3SC':module3_TotalCycleHour,
+                        # 'FC3V':module3_StackVol,
+                        # 'FC3AC':module3_TotalWattHour,
+                        # 'FC3A':module3_StackCur,
+                        # 'FC3T':module3_StackTemp,
+                        # 'FC3P':module3_StackCoolantPre,
                         #'FC2OA':module2_OutPutCur,
                         'FC1OW':module1_OutPutPower,
                         #'FC2OW':module2_OutPutPower,
@@ -1571,7 +1575,8 @@ while (internet_on):
                         'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
                         #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
                         'FC3H':module3,
-                        'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)}
+                        # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
+                        }
                 upload = requests.post(url,json = dataupload)
                 Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
                 DBsave.commit()
@@ -1621,15 +1626,15 @@ while (internet_on):
                     'PV2A':PV2A,
                     'PVT':PVT,
                     'PVC':2,
-                    'FC3TI':module3_TotalOperHour,
-                    'FC3OA':module3_OutPutCur,
-                    'FC3OW':module3_OutPutPower,
-                    'FC3SC':module3_TotalCycleHour,
-                    'FC3V':module3_StackVol,
-                    'FC3AC':module3_TotalWattHour,
-                    'FC3A':module3_StackCur,
-                    'FC3T':module3_StackTemp,
-                    'FC3P':module3_StackCoolantPre,
+                    # 'FC3TI':module3_TotalOperHour,
+                    # 'FC3OA':module3_OutPutCur,
+                    # 'FC3OW':module3_OutPutPower,
+                    # 'FC3SC':module3_TotalCycleHour,
+                    # 'FC3V':module3_StackVol,
+                    # 'FC3AC':module3_TotalWattHour,
+                    # 'FC3A':module3_StackCur,
+                    # 'FC3T':module3_StackTemp,
+                    # 'FC3P':module3_StackCoolantPre,
                     'FC3H':module3,
                     #'FC2OA':module2_OutPutCur,
                     'FC1OW':module1_OutPutPower,
@@ -1656,7 +1661,7 @@ while (internet_on):
                     'sysRT':SysRunTime,
                     'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
                     #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
-                    'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet),
+                    # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet),
                     'BATC':12,
                     'BAT1V':BAT1,
                     'BAT2V':BAT2,
@@ -1695,11 +1700,11 @@ while (internet_on):
                 if (module1_State == 1):
                     Module1_Request_start = '01'
                     if (module1_State == 8 or module1_State == 7 or module1_State == 6):
-                        Module3_Request_start = '01' #原本是Module2 (2022-08-05 Robert)
+                        # Module3_Request_start = '01' #原本是Module2 (2022-08-05 Robert)
                         #if (module2_State == 8 or module2_State == 7 or module2_State == 6):
                            # Module3_Request_start = '01'
-                        if (module3_State != 1):
-                            Module3_Request_start = '00' 
+                        # if (module3_State != 1):
+                        #     Module3_Request_start = '00' 
                 else:
                     Module1_Request_start = '00'
                     
