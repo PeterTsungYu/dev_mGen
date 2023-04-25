@@ -148,9 +148,11 @@ ser.dsrdtr = False
 ser.open()
 #-------------------------------------------------------------------
 #------Module Setting--------------------
-module1_IP = '192.168.10.200'
+# router setting
+# module1: 1680, Mac address: 70:b3:d5:7b:84:cb
+module1_IP = '192.168.10.201'
 Module1_currentset = struct.pack('f',18)
-module2_IP = '192.168.10.201'
+module2_IP = '192.168.10.200'
 Module2_currentset = struct.pack('f',18)
 module3_IP = '192.168.10.202'
 Module3_currentset = struct.pack('f',18)
