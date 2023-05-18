@@ -39,13 +39,13 @@ RM = 40000000
 BatFCC = 6000000
 
 # stack current set, initial 18A 
-module1_CurSet = 180
+module1_CurSet = 40
 module2_CurSet = 180
 module3_CurSet = 180
 # stack current set 51A 
-CurSet_HIGH = 510
+CurSet_HIGH = 40
 # stack current set 85A 
-CurSet_HIGHEST = 850
+CurSet_HIGHEST = 40
 
 fuelConsume = 0
 UpdateDate = 0
@@ -536,7 +536,10 @@ def on_message(client,userdata,msg):
     # Manual control on website
     if (RemoteCMD == 1):
         print("Hi")
-        if(RemoteCmd == 'FC_Control_Current'):
+        print(RemoteCmd)
+        print(FCcont)
+        print(RemoteValue)
+        if(RemoteCmd == 'FC_Control_Current_'):
             if(FCcont == 1):
                 module1_CurSet = int(RemoteValue)
                 time.sleep(1.5)
@@ -563,7 +566,7 @@ def on_message(client,userdata,msg):
                 print("FCcont=1-3")
                 RemoteCMD = 0
             
-        elif(RemoteCmd == 'FC_Control_Start'):
+        elif(RemoteCmd == 'FC_Control_Start_'):
             if(FCcont == 1):
                 if (RemoteValue == '3'):
                     Module1_Request_start = '01'
@@ -593,7 +596,7 @@ def on_message(client,userdata,msg):
                 print("FCcont=2-3")
                 RemoteCMD = 0
             
-        elif(RemoteCmd == 'FC_Control_Stop'):
+        elif(RemoteCmd == 'FC_Control_Stop_'):
             if(FCcont == 1):
                 if (RemoteValue == '3'):
                     Module1_Request_stop = '01'
@@ -622,7 +625,7 @@ def on_message(client,userdata,msg):
                 UpdateDate = 1
                 print("FCcont=3-3")
                 RemoteCMD = 0
-        elif(RemoteCmd == 'FC_Control_Reset'):
+        elif(RemoteCmd == 'FC_Control_Reset_'):
             if(FCcont == 1):
                 if (RemoteValue == '3'):
                     Module1_Request_reset = '01'
@@ -651,7 +654,7 @@ def on_message(client,userdata,msg):
                 UpdateDate = 1
                 print("FCcont=4-3")
                 RemoteCMD = 0
-        elif(RemoteCmd == 'FC_Control_Enable'):
+        elif(RemoteCmd == 'FC_Control_Enable_'):
             if(FCcont == 1):
                 if (RemoteValue == '2'):
                     Module1_Enable = '01'
@@ -687,7 +690,7 @@ def on_message(client,userdata,msg):
                 UpdateDate = 1
                 print("FCcont=5-3")
                 RemoteCMD = 0
-        elif(RemoteCmd == 'SYS_Control_Power'):
+        elif(RemoteCmd == 'SYS_Control_Power_'):
             if(FCcont == 0):
                 sysuAuto = FCcont
                 sysOutPut = RemoteValue
@@ -904,7 +907,24 @@ while (internet_on):
             module1_effic = (struct.unpack('f',module1_data[84:88]))[0]
             #module1_FC_free_run = int.from_bytes(module1_data[96:97],byteorder='big')
             #module1_Radiator_state = (struct.unpack('f',module1_data[100:104]))[0]
+            # print(module1_data)
         except:
+            module1 = 1680
+            module1_State = 0
+            module1_OutPutPower = 0
+            module1_TotalWattHour = 0
+            module1_effic = 0
+            module1_Enable = 0
+            module1_TotalOperHour = 0
+            module1_TotalCycleWatt = 0
+            module1_TotalCycleHour = 0
+            module1_OutPutVol = 0
+            module1_OutPutCur = 0            
+            module1_StackPower = 0
+            module1_StackVol = 0
+            module1_StackCur = 0
+            module1_StackTemp = 0
+            module1_StackCoolantPre = 0            
             print('module1 Get data error')
         #-------------------------------------------------------------------------------------
           
@@ -1039,8 +1059,8 @@ while (internet_on):
             if (SysRunTimeStart - SysRunTimeStop >= 3600):
                 SysRunTime = SysRunTime + 1
                 SysRunTimeStop = time.time()
-        else:
-            GPIO.output(FuelPumControl, GPIO.LOW)
+        # else:
+        #     GPIO.output(FuelPumControl, GPIO.LOW)
         fuelConsume = ((module1_effic * module1_OutPutPower) * 0.9) #+ ((module3_effic * module3_OutPutPower) * 0.9) + ((module2_effic * module2_OutPutPower) * 0.9)
         fuelConsume = fuelConsume * 0.1
         #print(fuelConsume)
@@ -1139,7 +1159,7 @@ while (internet_on):
                         'sysRT':SysRunTime,
                         'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
                         #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
-                        'FC3H':module3,
+                        # 'FC3H':module3,
                         #'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
                         }
                     upload = requests.post(url,json = dataupload)
@@ -1226,7 +1246,7 @@ while (internet_on):
                         'sysRT':SysRunTime,
                         'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
                         #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
-                        'FC3H':module3,
+                        # 'FC3H':module3,
                         # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
                         }
                     upload = requests.post(url,json = dataupload)
@@ -1313,7 +1333,7 @@ while (internet_on):
                         'sysRT':SysRunTime,
                         'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
                         #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
-                        'FC3H':module3,
+                        # 'FC3H':module3,
                         # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
                         }
                     upload = requests.post(url,json = dataupload)
@@ -1400,7 +1420,7 @@ while (internet_on):
                         'sysRT':SysRunTime,
                         'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
                         #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
-                        'FC3H':module3,
+                        # 'FC3H':module3,
                         # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
                         }
                     upload = requests.post(url,json = dataupload)
@@ -1487,7 +1507,7 @@ while (internet_on):
                         'sysRT':SysRunTime,
                         'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
                         #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
-                        'FC3H':module3,
+                        # 'FC3H':module3,
                         # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
                         }
                     upload = requests.post(url,json = dataupload)
@@ -1576,7 +1596,7 @@ while (internet_on):
                         'sysRT':SysRunTime,
                         'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
                         #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
-                        'FC3H':module3,
+                        # 'FC3H':module3,
                         # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
                         }
                 upload = requests.post(url,json = dataupload)
@@ -1596,6 +1616,7 @@ while (internet_on):
             print("I am here! inTI - dataLasTI >= 59")
             try:
                 dataLasTI = time.time()
+                # print(dataLasTI)
                 dataupload = {
                     'inTI':int(dataLasTI),
                     'A0100':SystemID,
@@ -1637,13 +1658,14 @@ while (internet_on):
                     # 'FC3A':module3_StackCur,
                     # 'FC3T':module3_StackTemp,
                     # 'FC3P':module3_StackCoolantPre,
-                    'FC3H':module3,
+                    # 'FC3H':module3,
                     #'FC2OA':module2_OutPutCur,
                     'FC1OW':module1_OutPutPower,
                     #'FC2OW':module2_OutPutPower,
                     'FC1SC':module1_TotalCycleHour,
                     #'FC2SC':module2_TotalCycleHour,
-                    'FCC':3,'TA':OutPutCur,
+                    'FCC':3,
+                    'TA':OutPutCur,
                     'FCTW':ModuleTotalOutPut,
                     'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
                     'A0200':sysOutPut,
@@ -1678,8 +1700,9 @@ while (internet_on):
                     'BAT11V':BAT11,
                     'BAT12V':BAT12}
                 
-                #print(dataupload)
+                print(dataupload)
                 upload = requests.post(url,json = dataupload)
+                print(upload)
                 Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
                 DBsave.commit()
                 #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
@@ -1695,20 +1718,21 @@ while (internet_on):
                 print('Data Upload ERROR')
 
 
-        if (OutPutVol < 3000): #Situation 1: Without charging load. Consume power normally.int(SOC) < 4 and OutPutWat <= 7000
-            print("Situiation 1: Without charging load. Consume power normally")
-            SetCMD = 1
-            if (SetCMD == 1):
-                if (module1_State == 1):
-                    Module1_Request_start = '01'
-                    if (module1_State == 8 or module1_State == 7 or module1_State == 6):
-                        # Module3_Request_start = '01' #原本是Module2 (2022-08-05 Robert)
-                        #if (module2_State == 8 or module2_State == 7 or module2_State == 6):
-                           # Module3_Request_start = '01'
-                        # if (module3_State != 1):
-                        #     Module3_Request_start = '00' 
-                else:
-                    Module1_Request_start = '00'
+        # if (OutPutVol < 3000): #Situation 1: Without charging load. Consume power normally.int(SOC) < 4 and OutPutWat <= 7000
+        #     print("Situiation 1: Without charging load. Consume power normally")
+        #     SetCMD = 1
+        #     if (SetCMD == 1):
+        #         if (module1_State == 1):
+        #             Module1_Request_start = '01'
+        #             if (module1_State == 8 or module1_State == 7 or module1_State == 6):
+        #                 pass
+        #                 # Module3_Request_start = '01' #原本是Module2 (2022-08-05 Robert)
+        #                 #if (module2_State == 8 or module2_State == 7 or module2_State == 6):
+        #                    # Module3_Request_start = '01'
+        #                 # if (module3_State != 1):
+        #                 #     Module3_Request_start = '00' 
+        #         else:
+        #             Module1_Request_start = '00'
                     
         """elif (int(SOC) < 4 and  7000 < OutPutWat <= 9000): #Situation2: With one charging load.
             print("Situiation 2: With one charging load")
