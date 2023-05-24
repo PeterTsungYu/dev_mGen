@@ -23,6 +23,8 @@ import adafruit_ads1x15.ads1015 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 from email.mime.multipart import MIMEMultipart
 
+import tangramModbus
+
 SystemID = 13101
 dataLasTI = 0
 SendGmailTi = 0
@@ -133,7 +135,7 @@ DBsave = sqlite3.connect("M101.db")
 Cursor = DBsave.cursor()
 Sysdata_list = []
 #------------------------------------------------------------------
-#-----------------SerialPort Config---------------------------
+#-----------------SerialPort Config for mGen PCB---------------------------
 ser = serial.Serial()
 ser.port = "/dev/ttyUSB0"
 ser.baudrate = 9600
@@ -1714,6 +1716,24 @@ while (internet_on):
                 #print(OutPutVol)
                 #print(dataupload)
                 #print(int(FuelLevel))
+                # Example usage
+
+                tangramData = [
+                    dataLasTI, SystemID, SystemHealth, OutPutWat, OutPutVol, OutPutCur,
+                    T1, T2, T3, T4,
+                    TotalkW, ModuleTotalOutPut, FuelLevel, fuelConsume, leaksensor1, Overflow,
+                    module1, module1_State, module1_TotalCycleWatt, module1_TotalCycleHour, module1_OutPutPower, module1_OutPutVol, module1_OutPutCur, module1_effic,
+                    # module2, module2_State, module2_TotalCycleWatt, module2_TotalCycleHour, module2_OutPutPower, module2_OutPutVol, module2_OutPutCur, module2_effic,
+                    # module3, module3_State, module3_TotalCycleWatt, module3_TotalCycleHour, module3_OutPutPower, module3_OutPutVol, module3_OutPutCur, module3_effic,
+                    PV1V, PV1A, PV2V, PV2A, PVT,
+                    SOC, BatCur,
+                    ]                
+                modbus_packet = tangramModbus.create_modbus_packet(1, 16, tangramData)
+
+                # Open serial port and send the packet, then close the ser
+                # with serial.Serial('/dev/ttyUSB1', 9600, timeout=1) as ser:
+                #     ser.write(modbus_packet)
+
             except:
                 print('Data Upload ERROR')
 
