@@ -22,6 +22,7 @@ from email.mime.base import MIMEBase
 import adafruit_ads1x15.ads1015 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 from email.mime.multipart import MIMEMultipart
+import threading
 
 import tangramModbus
 
@@ -168,6 +169,10 @@ Module3_Request_start ='00'
 Module3_Request_stop ='00'
 Module3_Request_reset = '00'
 #-----------------------------------------
+# Create and start the thread to read Modbus messages
+# tangramModbus_thread = threading.Thread(target=tangramModbus.handle_modbus_message, args=())
+# tangramModbus_thread.start()
+
 
 def get_module1_data(module1_IP): #Module1 EthernertIP 抓資料
     global Module1_currentset,Module1_Enable,Module1_Request_start,Module1_Request_stop,Module1_Request_reset,module1
@@ -739,888 +744,361 @@ print(SysRunTime)
 
 
 while (internet_on):
-    #try:
+    inTI = time.time()
+    if ( inTI - LastTi >= 10):
         inTI = time.time()
-        if ( inTI - LastTi >= 10):
-            inTI = time.time()
-            try:
-                #ser.write(Arduino)
-                #buf = ser.read(32)
-                #print(buf)
-                #for i in range(len(buf)):
-                #    break
-                #Arduino = buf[4] + (buf[3] << 8)
-                #print(Arduino)
-                
-                ser.write(Loadmeter_Vol)
-                buf = ser.read(10)
-                #print(buf)
-                for i in range(len(buf)):
-                    break
-                OutPutVol = buf[4] + (buf[3] << 8)
-                #print(OutPutVol)
-                ser.write(Loadmeter_Cur)
-                buf = ser.read(10)
-                #print(buf)
-                for i in range(len(buf)):
-                    break
-                OutPutCur = (buf[4] + (buf[3] << 8))
-                if (OutPutCur > 10000):
-                    OutPutCur = (OutPutCur-65536)
-                OutPutCur = OutPutCur
-                #print(OutPutCur)
-                ser.write(Loadmeter_Wat)
-                buf = ser.read(10)
-                for i in range(len(buf)):
-                    break
-                OutPutWat = buf[6] + (buf[5] << 8)
-                if (OutPutWat > 24000):
-                    OutPutWat = OutPutWat-65536
-                #print(OutPutWat)
-            except:
-                print('Meter Error')
-                print(module1_OutPutVol)
-            try:
-                ser.write(Temperature)
-                time.sleep(0.3)
-                buf = ser.read(15)
-                #print(buf)
-                for i in range(len(buf)):
-                    break
-                T1 = int(buf[4] + (buf[3] << 8))
-                if (T1 > 50000):
-                    T1 = 250
-                #print(T1)
-                T2 = int(buf[6] + (buf[5] << 8))
-                if (T2 > 50000):
-                    T2 = 250
-                #print(T2)
-                T3 = int(buf[8] + (buf[7] << 8))
-                if (T3 > 50000):
-                    T3 = 250
-                #print(T3)
-                T4 = int(buf[10] + (buf[9] << 8))
-                if (T4 > 50000):
-                    T4 = 250
-                #print(T4)
-            except:
-                T1 = 0
-                T2 = 0
-                T3 = 0
-                T4 = 0
-                #print('Temperature error')
-            try:
-                ser.write(PV)
-                time.sleep(0.3)
-                buf = ser.read(17)
-                #print(buf)
-                for i in range(len(buf)):
-                    break
-                PV1V = int(buf[4] + (buf[3] << 8))
-                #print(PV1V)
-                PV1A = float(buf[6] + (buf[5] << 8))*0.1
-                #print(PV1A)
-                PV2V = int(buf[8] + (buf[7] << 8))
-                #print(PV2V)
-                PV2A = float(buf[10] + (buf[9] << 8))*0.1
-                #print(PV2A)
-                PVT = int(buf[12] + (buf[11] << 8))
-                #print(PVT)
-            except:
-                PV1V = 0
-                PV1A = 0
-                PV2V = 0
-                PV2A = 0
-                PVT = 0
-                print('PV error')
-                
-            if (inTI - SocTI >= 1):
-                ser.write(Batmeter_Cur)
-                buf = ser.read(10)
-                #print(buf)
-                for i in range(len(buf)):
-                    break
-                BatCur = int(buf[4] + (buf[3] << 8))
-                if (BatCur > 50000):
-                    BatCurSoc = BatCur-65536 
-                else:
-                    BatCurSoc = BatCur
-                #print(BatCurSoc)
-                if (OutPutVol >= 3297):
-                    if (BatCurSoc < 10):
-                        RM = 5994000
-                #print(int(SOC))
-                RM = int(RM + BatCurSoc)
-                SOC = (RM/BatFCC) * 100
-                SocTI = time.time()
-                if (SOC >= 99.9):
-                    SOC = 99.9
-                    RM = 5994000
-            BAT1 = round((float(OutPutVol/12)*0.1+0.54),2)
-            BAT2 = round((float(OutPutVol/12)*0.1+0.32),2)
-            BAT3 = round((float(OutPutVol/12)*0.1+0.23),2)
-            BAT4 = round((float(OutPutVol/12)*0.1+0.45),2)
-            BAT5 = round((float(OutPutVol/12)*0.1-0.54),2)
-            BAT6 = round((float(OutPutVol/12)*0.1-0.32),2)
-            BAT7 = round((float(OutPutVol/12)*0.1-0.23),2)
-            BAT8 = round((float(OutPutVol/12)*0.1-0.45),2)
-            BAT9 = round((float(OutPutVol/12)*0.1+0.32),2)
-            BAT10 = round((float(OutPutVol/12)*0.1-0.32),2)
-            BAT11 = round((float(OutPutVol/12)*0.1+0.11),2)
-            BAT12 = round((float(OutPutVol/12)*0.1-0.11),2)
-        #------------------Module1 data-------------------------------------------------------
         try:
-            module1_data = get_module1_data(module1_IP)
-            module1_Requested_state = int.from_bytes(module1_data[20:21],byteorder='big')
-            if (module1_Requested_state == 2):
-                module1_Enable = 2
-            else:
-                module1_Enable = 1
-            module1_Start_possible = int.from_bytes(module1_data[21:22],byteorder='big')
-            module1_Stop_possible = int.from_bytes(module1_data[22:23],byteorder='big')
-            module1_Reset_possible = int.from_bytes(module1_data[23:24],byteorder='big')
-            module1_State = int.from_bytes(module1_data[24:25],byteorder='big')
-            if ((module1_State == 2) or (module1_State == 4) or (module1_State == 5) or (module1_State == 9)):
-                Module1_Request_start ='00'
-            elif(module1_State == 6):
-                Module1_Request_stop ='00'
-            #module1_Alert = module1_data[25:32]
-            #module1_Alertmessage = ''.join(['%02x' % b for b in module1_Alert])
-            #module1_Startup_count = (struct.unpack('f',(module1_data[32:36])))[0]
-            module1_TotalWattHour = ((struct.unpack('f',module1_data[36:40]))[0])*10
-            module1_TotalOperHour = ((struct.unpack('f',module1_data[40:44]))[0])*10
-            module1_TotalCycleWatt = ((struct.unpack('f',module1_data[44:48]))[0])*10
-            module1_TotalCycleHour = ((struct.unpack('f',module1_data[48:52]))[0])*10
-            module1_OutPutPower = (struct.unpack('f',module1_data[52:56]))[0]
-            if (module1_OutPutPower < 150 or module1_State == 1):
-                module1_OutPutPower = 0
-            module1_OutPutVol = (struct.unpack('f',module1_data[56:60]))[0]
-            module1_OutPutCur = ((struct.unpack('f',module1_data[60:64]))[0])*10
-            module1_StackPower = (struct.unpack('f',module1_data[64:68]))[0]
-            module1_StackVol =((struct.unpack('f',module1_data[68:72]))[0])*10
-            if module1_StackVol < 0:
-                module1_StackVol = 0
-            module1_StackCur = ((struct.unpack('f',module1_data[72:76]))[0])*10
-            #print(module1_StackCur)
-            if module1_StackCur < 0:
-                module1_StackCur = 0
-            module1_StackTemp = ((struct.unpack('f',module1_data[76:80]))[0])*10
-            module1_StackCoolantPre = ((struct.unpack('f',module1_data[80:84]))[0])*10
-            module1_effic = (struct.unpack('f',module1_data[84:88]))[0]
-            #module1_FC_free_run = int.from_bytes(module1_data[96:97],byteorder='big')
-            #module1_Radiator_state = (struct.unpack('f',module1_data[100:104]))[0]
-            # print(module1_data)
+            #ser.write(Arduino)
+            #buf = ser.read(32)
+            #print(buf)
+            #for i in range(len(buf)):
+            #    break
+            #Arduino = buf[4] + (buf[3] << 8)
+            #print(Arduino)
+            
+            ser.write(Loadmeter_Vol)
+            buf = ser.read(10)
+            #print(buf)
+            for i in range(len(buf)):
+                break
+            OutPutVol = buf[4] + (buf[3] << 8)
+            #print(OutPutVol)
+            ser.write(Loadmeter_Cur)
+            buf = ser.read(10)
+            #print(buf)
+            for i in range(len(buf)):
+                break
+            OutPutCur = (buf[4] + (buf[3] << 8))
+            if (OutPutCur > 10000):
+                OutPutCur = (OutPutCur-65536)
+            OutPutCur = OutPutCur
+            #print(OutPutCur)
+            ser.write(Loadmeter_Wat)
+            buf = ser.read(10)
+            for i in range(len(buf)):
+                break
+            OutPutWat = buf[6] + (buf[5] << 8)
+            if (OutPutWat > 24000):
+                OutPutWat = OutPutWat-65536
+            #print(OutPutWat)
         except:
-            module1 = 1680
-            module1_State = 0
+            print('Meter Error')
+            print(module1_OutPutVol)
+        try:
+            ser.write(Temperature)
+            time.sleep(0.3)
+            buf = ser.read(15)
+            #print(buf)
+            for i in range(len(buf)):
+                break
+            T1 = int(buf[4] + (buf[3] << 8))
+            if (T1 > 50000):
+                T1 = 250
+            #print(T1)
+            T2 = int(buf[6] + (buf[5] << 8))
+            if (T2 > 50000):
+                T2 = 250
+            #print(T2)
+            T3 = int(buf[8] + (buf[7] << 8))
+            if (T3 > 50000):
+                T3 = 250
+            #print(T3)
+            T4 = int(buf[10] + (buf[9] << 8))
+            if (T4 > 50000):
+                T4 = 250
+            #print(T4)
+        except:
+            T1 = 0
+            T2 = 0
+            T3 = 0
+            T4 = 0
+            #print('Temperature error')
+        try:
+            ser.write(PV)
+            time.sleep(0.3)
+            buf = ser.read(17)
+            #print(buf)
+            for i in range(len(buf)):
+                break
+            PV1V = int(buf[4] + (buf[3] << 8))
+            #print(PV1V)
+            PV1A = float(buf[6] + (buf[5] << 8))*0.1
+            #print(PV1A)
+            PV2V = int(buf[8] + (buf[7] << 8))
+            #print(PV2V)
+            PV2A = float(buf[10] + (buf[9] << 8))*0.1
+            #print(PV2A)
+            PVT = int(buf[12] + (buf[11] << 8))
+            #print(PVT)
+        except:
+            PV1V = 0
+            PV1A = 0
+            PV2V = 0
+            PV2A = 0
+            PVT = 0
+            print('PV error')
+            
+        if (inTI - SocTI >= 1):
+            ser.write(Batmeter_Cur)
+            buf = ser.read(10)
+            #print(buf)
+            for i in range(len(buf)):
+                break
+            BatCur = int(buf[4] + (buf[3] << 8))
+            if (BatCur > 50000):
+                BatCurSoc = BatCur-65536 
+            else:
+                BatCurSoc = BatCur
+            #print(BatCurSoc)
+            if (OutPutVol >= 3297):
+                if (BatCurSoc < 10):
+                    RM = 5994000
+            #print(int(SOC))
+            RM = int(RM + BatCurSoc)
+            SOC = (RM/BatFCC) * 100
+            SocTI = time.time()
+            if (SOC >= 99.9):
+                SOC = 99.9
+                RM = 5994000
+        BAT1 = round((float(OutPutVol/12)*0.1+0.54),2)
+        BAT2 = round((float(OutPutVol/12)*0.1+0.32),2)
+        BAT3 = round((float(OutPutVol/12)*0.1+0.23),2)
+        BAT4 = round((float(OutPutVol/12)*0.1+0.45),2)
+        BAT5 = round((float(OutPutVol/12)*0.1-0.54),2)
+        BAT6 = round((float(OutPutVol/12)*0.1-0.32),2)
+        BAT7 = round((float(OutPutVol/12)*0.1-0.23),2)
+        BAT8 = round((float(OutPutVol/12)*0.1-0.45),2)
+        BAT9 = round((float(OutPutVol/12)*0.1+0.32),2)
+        BAT10 = round((float(OutPutVol/12)*0.1-0.32),2)
+        BAT11 = round((float(OutPutVol/12)*0.1+0.11),2)
+        BAT12 = round((float(OutPutVol/12)*0.1-0.11),2)
+    #------------------Module1 data-------------------------------------------------------
+    try:
+        module1_data = get_module1_data(module1_IP)
+        module1_Requested_state = int.from_bytes(module1_data[20:21],byteorder='big')
+        if (module1_Requested_state == 2):
+            module1_Enable = 2
+        else:
+            module1_Enable = 1
+        module1_Start_possible = int.from_bytes(module1_data[21:22],byteorder='big')
+        module1_Stop_possible = int.from_bytes(module1_data[22:23],byteorder='big')
+        module1_Reset_possible = int.from_bytes(module1_data[23:24],byteorder='big')
+        module1_State = int.from_bytes(module1_data[24:25],byteorder='big')
+        if ((module1_State == 2) or (module1_State == 4) or (module1_State == 5) or (module1_State == 9)):
+            Module1_Request_start ='00'
+        elif(module1_State == 6):
+            Module1_Request_stop ='00'
+        #module1_Alert = module1_data[25:32]
+        #module1_Alertmessage = ''.join(['%02x' % b for b in module1_Alert])
+        #module1_Startup_count = (struct.unpack('f',(module1_data[32:36])))[0]
+        module1_TotalWattHour = ((struct.unpack('f',module1_data[36:40]))[0])*10
+        module1_TotalOperHour = ((struct.unpack('f',module1_data[40:44]))[0])*10
+        module1_TotalCycleWatt = ((struct.unpack('f',module1_data[44:48]))[0])*10
+        module1_TotalCycleHour = ((struct.unpack('f',module1_data[48:52]))[0])*10
+        module1_OutPutPower = (struct.unpack('f',module1_data[52:56]))[0]
+        if (module1_OutPutPower < 150 or module1_State == 1):
             module1_OutPutPower = 0
-            module1_TotalWattHour = 0
-            module1_effic = 0
-            module1_Enable = 0
-            module1_TotalOperHour = 0
-            module1_TotalCycleWatt = 0
-            module1_TotalCycleHour = 0
-            module1_OutPutVol = 0
-            module1_OutPutCur = 0            
-            module1_StackPower = 0
+        module1_OutPutVol = (struct.unpack('f',module1_data[56:60]))[0]
+        module1_OutPutCur = ((struct.unpack('f',module1_data[60:64]))[0])*10
+        module1_StackPower = (struct.unpack('f',module1_data[64:68]))[0]
+        module1_StackVol =((struct.unpack('f',module1_data[68:72]))[0])*10
+        if module1_StackVol < 0:
             module1_StackVol = 0
+        module1_StackCur = ((struct.unpack('f',module1_data[72:76]))[0])*10
+        #print(module1_StackCur)
+        if module1_StackCur < 0:
             module1_StackCur = 0
-            module1_StackTemp = 0
-            module1_StackCoolantPre = 0            
-            print('module1 Get data error')
-        #-------------------------------------------------------------------------------------
-          
-        #------------------module2 data-------------------------------------------------------
-        """try:
-            module2_data = get_module2_data(module2_IP)
-            module2_Requested_state = int.from_bytes(module2_data[20:21],byteorder='big')
-            if (module2_Requested_state == 2):
-                module2_Enable = 2
-            else:
-                module2_Enable = 1
-            module2_Start_possible = int.from_bytes(module2_data[21:22],byteorder='big')
-            module2_Stop_possible = int.from_bytes(module2_data[22:23],byteorder='big')
-            module2_Reset_possible = int.from_bytes(module2_data[23:24],byteorder='big')
-            module2_State = int.from_bytes(module2_data[24:25],byteorder='big')
-            if ((module2_State == 2) or (module2_State == 4) or (module2_State == 5) or (module2_State == 9)):
-                Module2_Request_start ='00'
-            elif(module2_State == 6):
-                Module2_Request_stop ='00'
-            #module2_Alert = module2_data[25:32]
-            #module2_Alertmessage = ''.join(['%02x' % b for b in module2_Alert])
-            #module2_Startup_count = (struct.unpack('f',(module2_data[32:36])))[0]
-            module2_TotalWattHour = ((struct.unpack('f',module2_data[36:40]))[0])*10
-            module2_TotalOperHour = ((struct.unpack('f',module2_data[40:44]))[0])*10
-            module2_TotalCycleWatt = ((struct.unpack('f',module2_data[44:48]))[0])*10
-            module2_TotalCycleHour = ((struct.unpack('f',module2_data[48:52]))[0])*10
-            module2_OutPutPower = (struct.unpack('f',module2_data[52:56]))[0]
-            if (module2_OutPutPower < 0 or module2_State == 1):
-                module2_OutPutPower = 0
-            module2_OutPutVol = ((struct.unpack('f',module2_data[56:60]))[0])*10
-            module2_OutPutCur = ((struct.unpack('f',module2_data[60:64]))[0])*10
-            module2_StackPower = (struct.unpack('f',module2_data[64:68]))[0]
-            module2_StackVol =((struct.unpack('f',module2_data[68:72]))[0])*10
-            if module2_StackVol < 0:
-                module2_StackVol = 0
-            module2_StackCur = ((struct.unpack('f',module2_data[72:76]))[0])*10
-            if (module2_StackCur <= 0):
-                module2_StackCur = 0
-            module2_StackTemp = ((struct.unpack('f',module2_data[76:80]))[0])*10
-            module2_StackCoolantPre = ((struct.unpack('f',module2_data[80:84]))[0])*10
-            module2_effic = (struct.unpack('f',module2_data[84:88]))[0]
-            #module2_FC_free_run = int.from_bytes(module2_data[96:97],byteorder='big')
-            #module2_Radiator_state = (struct.unpack('f',module2_data[100:104]))[0]
-        except:
-            print('module2 Get data error')
-        """
-        #----------------------------------------------------------------------------------------
+        module1_StackTemp = ((struct.unpack('f',module1_data[76:80]))[0])*10
+        module1_StackCoolantPre = ((struct.unpack('f',module1_data[80:84]))[0])*10
+        module1_effic = (struct.unpack('f',module1_data[84:88]))[0]
+        #module1_FC_free_run = int.from_bytes(module1_data[96:97],byteorder='big')
+        #module1_Radiator_state = (struct.unpack('f',module1_data[100:104]))[0]
+        # print(module1_data)
+    except:
+        module1 = 1680
+        module1_State = 0
+        module1_OutPutPower = 0
+        module1_TotalWattHour = 0
+        module1_effic = 0
+        module1_Enable = 0
+        module1_TotalOperHour = 0
+        module1_TotalCycleWatt = 0
+        module1_TotalCycleHour = 0
+        module1_OutPutVol = 0
+        module1_OutPutCur = 0            
+        module1_StackPower = 0
+        module1_StackVol = 0
+        module1_StackCur = 0
+        module1_StackTemp = 0
+        module1_StackCoolantPre = 0            
+        print('module1 Get data error')
+    #-------------------------------------------------------------------------------------
+        
+    #------------------module2 data-------------------------------------------------------
+    """try:
+        module2_data = get_module2_data(module2_IP)
+        module2_Requested_state = int.from_bytes(module2_data[20:21],byteorder='big')
+        if (module2_Requested_state == 2):
+            module2_Enable = 2
+        else:
+            module2_Enable = 1
+        module2_Start_possible = int.from_bytes(module2_data[21:22],byteorder='big')
+        module2_Stop_possible = int.from_bytes(module2_data[22:23],byteorder='big')
+        module2_Reset_possible = int.from_bytes(module2_data[23:24],byteorder='big')
+        module2_State = int.from_bytes(module2_data[24:25],byteorder='big')
+        if ((module2_State == 2) or (module2_State == 4) or (module2_State == 5) or (module2_State == 9)):
+            Module2_Request_start ='00'
+        elif(module2_State == 6):
+            Module2_Request_stop ='00'
+        #module2_Alert = module2_data[25:32]
+        #module2_Alertmessage = ''.join(['%02x' % b for b in module2_Alert])
+        #module2_Startup_count = (struct.unpack('f',(module2_data[32:36])))[0]
+        module2_TotalWattHour = ((struct.unpack('f',module2_data[36:40]))[0])*10
+        module2_TotalOperHour = ((struct.unpack('f',module2_data[40:44]))[0])*10
+        module2_TotalCycleWatt = ((struct.unpack('f',module2_data[44:48]))[0])*10
+        module2_TotalCycleHour = ((struct.unpack('f',module2_data[48:52]))[0])*10
+        module2_OutPutPower = (struct.unpack('f',module2_data[52:56]))[0]
+        if (module2_OutPutPower < 0 or module2_State == 1):
+            module2_OutPutPower = 0
+        module2_OutPutVol = ((struct.unpack('f',module2_data[56:60]))[0])*10
+        module2_OutPutCur = ((struct.unpack('f',module2_data[60:64]))[0])*10
+        module2_StackPower = (struct.unpack('f',module2_data[64:68]))[0]
+        module2_StackVol =((struct.unpack('f',module2_data[68:72]))[0])*10
+        if module2_StackVol < 0:
+            module2_StackVol = 0
+        module2_StackCur = ((struct.unpack('f',module2_data[72:76]))[0])*10
+        if (module2_StackCur <= 0):
+            module2_StackCur = 0
+        module2_StackTemp = ((struct.unpack('f',module2_data[76:80]))[0])*10
+        module2_StackCoolantPre = ((struct.unpack('f',module2_data[80:84]))[0])*10
+        module2_effic = (struct.unpack('f',module2_data[84:88]))[0]
+        #module2_FC_free_run = int.from_bytes(module2_data[96:97],byteorder='big')
+        #module2_Radiator_state = (struct.unpack('f',module2_data[100:104]))[0]
+    except:
+        print('module2 Get data error')
+    """
+    #----------------------------------------------------------------------------------------
+
+    #------------------module3 data-------------------------------------------------------
+    # try:
+    #     module3_data = get_module3_data(module3_IP)
+    #     module3_Requested_state = int.from_bytes(module3_data[20:21],byteorder='big')
+    #     if (module3_Requested_state == 2):
+    #         module3_Enable = 2
+    #     else:
+    #         module3_Enable = 1
+    #     module3_Start_possible = int.from_bytes(module3_data[21:22],byteorder='big')
+    #     module3_Stop_possible = int.from_bytes(module3_data[22:23],byteorder='big')
+    #     module3_Reset_possible = int.from_bytes(module3_data[23:24],byteorder='big')
+    #     module3_State = int.from_bytes(module3_data[24:25],byteorder='big')
+    #     if ((module3_State == 2) or (module3_State == 4) or (module3_State == 5) or (module3_State == 9)):
+    #         Module3_Request_start ='00'
+    #     elif(module3_State == 6):
+    #         Module3_Request_stop ='00'
+    #     #module3_Alert = module3_data[25:32]
+    #     #module3_Alertmessage = ''.join(['%02x' % b for b in module3_Alert])
+    #     #module3_Startup_count = (struct.unpack('f',(module3_data[32:36])))[0]
+    #     module3_TotalWattHour = ((struct.unpack('f',module3_data[36:40]))[0])*10
+    #     module3_TotalOperHour = ((struct.unpack('f',module3_data[40:44]))[0])*10
+    #     module3_TotalCycleWatt = ((struct.unpack('f',module3_data[44:48]))[0])*10
+    #     module3_TotalCycleHour = ((struct.unpack('f',module3_data[48:52]))[0])*10
+    #     module3_OutPutPower = (struct.unpack('f',module3_data[52:56]))[0]
+    #     if (module3_OutPutPower < 0):
+    #         module3_OutPutPower = 0
+    #     module3_OutPutVol = ((struct.unpack('f',module3_data[56:60]))[0])*10
+    #     module3_OutPutCur = ((struct.unpack('f',module3_data[60:64]))[0])*10
+    #     module3_StackPower = (struct.unpack('f',module3_data[64:68]))[0]
+    #     module3_StackVol = ((struct.unpack('f',module3_data[68:72]))[0])*10
+    #     module3_StackCur = ((struct.unpack('f',module3_data[72:76]))[0])*10
+    #     if (module3_StackCur <= 0):
+    #         module3_StackCur = 0
+    #     module3_StackTemp = ((struct.unpack('f',module3_data[76:80]))[0])*10
+    #     module3_StackCoolantPre = ((struct.unpack('f',module3_data[80:84]))[0])*10
+    #     module3_effic = (struct.unpack('f',module3_data[84:88]))[0]
+    #     #module3_FC_free_run = int.from_bytes(module3_data[96:97],byteorder='big')
+    #     #module3_Radiator_state = (struct.unpack('f',module3_data[100:104]))[0]
+    # except:
+    #     print('module3 Get data error')
+    #----------------------------------------------------------------------------------------
     
-        #------------------module3 data-------------------------------------------------------
-        # try:
-        #     module3_data = get_module3_data(module3_IP)
-        #     module3_Requested_state = int.from_bytes(module3_data[20:21],byteorder='big')
-        #     if (module3_Requested_state == 2):
-        #         module3_Enable = 2
-        #     else:
-        #         module3_Enable = 1
-        #     module3_Start_possible = int.from_bytes(module3_data[21:22],byteorder='big')
-        #     module3_Stop_possible = int.from_bytes(module3_data[22:23],byteorder='big')
-        #     module3_Reset_possible = int.from_bytes(module3_data[23:24],byteorder='big')
-        #     module3_State = int.from_bytes(module3_data[24:25],byteorder='big')
-        #     if ((module3_State == 2) or (module3_State == 4) or (module3_State == 5) or (module3_State == 9)):
-        #         Module3_Request_start ='00'
-        #     elif(module3_State == 6):
-        #         Module3_Request_stop ='00'
-        #     #module3_Alert = module3_data[25:32]
-        #     #module3_Alertmessage = ''.join(['%02x' % b for b in module3_Alert])
-        #     #module3_Startup_count = (struct.unpack('f',(module3_data[32:36])))[0]
-        #     module3_TotalWattHour = ((struct.unpack('f',module3_data[36:40]))[0])*10
-        #     module3_TotalOperHour = ((struct.unpack('f',module3_data[40:44]))[0])*10
-        #     module3_TotalCycleWatt = ((struct.unpack('f',module3_data[44:48]))[0])*10
-        #     module3_TotalCycleHour = ((struct.unpack('f',module3_data[48:52]))[0])*10
-        #     module3_OutPutPower = (struct.unpack('f',module3_data[52:56]))[0]
-        #     if (module3_OutPutPower < 0):
-        #         module3_OutPutPower = 0
-        #     module3_OutPutVol = ((struct.unpack('f',module3_data[56:60]))[0])*10
-        #     module3_OutPutCur = ((struct.unpack('f',module3_data[60:64]))[0])*10
-        #     module3_StackPower = (struct.unpack('f',module3_data[64:68]))[0]
-        #     module3_StackVol = ((struct.unpack('f',module3_data[68:72]))[0])*10
-        #     module3_StackCur = ((struct.unpack('f',module3_data[72:76]))[0])*10
-        #     if (module3_StackCur <= 0):
-        #         module3_StackCur = 0
-        #     module3_StackTemp = ((struct.unpack('f',module3_data[76:80]))[0])*10
-        #     module3_StackCoolantPre = ((struct.unpack('f',module3_data[80:84]))[0])*10
-        #     module3_effic = (struct.unpack('f',module3_data[84:88]))[0]
-        #     #module3_FC_free_run = int.from_bytes(module3_data[96:97],byteorder='big')
-        #     #module3_Radiator_state = (struct.unpack('f',module3_data[100:104]))[0]
-        # except:
-        #     print('module3 Get data error')
-        #----------------------------------------------------------------------------------------
-        
-            #handleFANspeed()
-        ModuleState = str(module1_State) +str(0) + str(0)
-        ModuleTotalOutPut = module1_OutPutPower #+ module2_OutPutPower + module3_OutPutPower
-        #print(ModuleTotalOutPut)
-        TotalkW = module1_TotalWattHour #+ module2_TotalWattHour + module3_TotalWattHour
-        #print(fuelLevel.voltage)
-        FuelLevel = ((fuelLevel.voltage-3.44)/(1.48-3.44))*100#  0.83
-        #if (FuelLevel <= 30):
-        #    print('Low Fuel')
-            #GPIO.output(PowerRelayControl, GPIO.HIGH)
-        #elif(FuelLevel >= 100):
-         #   print('High Fuel')
-            #GPIO.output(PowerRelayControl, GPIO.LOW)
-        if (FuelLevel <= 0):
-            FuelLevel = 0
-        elif (FuelLevel >= 100):
-            FuelLevel = 100
-        SystemHealth = (((OutPutVol - 2950)/(3250-2950)) * 90) + (FuelLevel * 0.1)
-        if (SystemHealth <= 0):
-            SystemHealth = 0
-        elif (SystemHealth >= 100):
-                SystemHealth = 100
-        #print(SystemHealth)
-        Overflow = '0'#GPIO.input(OverFolwDry)
-        #if (Overflow == 0):
-        #        Overflow = 1
-        #elif(Overflow == 1):
-        #        Overflow = 0
-        leaksensor1 = '0'#GPIO.input(Leak)
-        #if (leaksensor1 == 0):
-        #        leaksensor1 = 1
-        #elif(leaksensor1 == 1):
-        #        leaksensor1 = 0
-        leaksensor2 = '0'
-        leaksensor = '%s%s'%(leaksensor1,leaksensor2)
-        SystemAlert ='%s%s%s%s'%('0','0','0',Overflow)
-        if (module1_State == 3 or module1_State == 4 or module1_State == 5 or module1_State == 6 or module1_State == 2 or module1_State == 9):
-            #module3_State == 3 or module3_State == 4 or module3_State == 5 or module3_State == 6 or module3_State == 2 or module3_State == 9 ):
-            #module2_State == 3 or module2_State == 4 or module2_State == 5 or module2_State == 6 or module2_State == 2 or module2_State == 9):
-            GPIO.output(FuelPumControl, GPIO.HIGH)
-            SysRunTimeStart = time.time()
-            if (SysRunTimeStart - SysRunTimeStop >= 3600):
-                SysRunTime = SysRunTime + 1
-                SysRunTimeStop = time.time()
-        # else:
-        #     GPIO.output(FuelPumControl, GPIO.LOW)
-        fuelConsume = ((module1_effic * module1_OutPutPower) * 0.9) #+ ((module3_effic * module3_OutPutPower) * 0.9) + ((module2_effic * module2_OutPutPower) * 0.9)
-        fuelConsume = fuelConsume * 0.1
-        #print(fuelConsume)
-#         if (module1_State == 8 or module2_State == 8 or leaksensor1 >= 1 or OutPutVol <= 2950 or T1 > 700 or T2 > 500 or FuelLevel <=0):# or module3_State == 8):
-#             if (inTI - SendGmailTi >= 7200):
-#                 #ModuleErrorSendGmail()
-#                 SendGmailTi = time.time()
-        
-        if (sysAuto == 1):
-            print("Hello")
-            if (inTI - SetCMDTi >= 1):
-                if (abs(ModuleTotalOutPut - sysOutPut) <= 50):
-                    module1_CurSet = module1_CurSet
-                    #module2_CurSet = module2_CurSet
-                    module3_CurSet = module3_CurSet
-                elif (ModuleTotalOutPut <= sysOutPut):
-                    module1_CurSet = module1_CurSet + 1
-                    #module2_CurSet = module2_CurSet + 1
-                    module3_CurSet = module3_CurSet + 1
-                    SetCMDTi = time.time()
-                elif(ModuleTotalOutPut <= sysOutPut):
-                    module1_CurSet = module1_CurSet - 1
-                    #module2_CurSet = module2_CurSet - 1
-                    module3_CurSet = module3_CurSet - 1
-                    SetCMDTi = time.time()
-        #OutPutWat1 = 11000
-        if (inTI - SPECTI >= 9):
-            if (OutPutWat > 6000):
-                try:
-                    print("I am here! OutPutWat > 6000")
-                    dataupload = {
-                        'inTI':int(inTI),
-                        'A0100':SystemID,
-                        'A0101':int(SystemHealth),
-                        'A0201':OutPutWat,
-                        'A0300':ModuleState,
-                        'A0700':OutPutVol,
-                        'A0800':T1,
-                        'A0801':T2,
-                        'A0802':T3,
-                        'A0803':T4,
-                        'A0900':TotalkW,
-                        'FC1V':module1_StackVol,
-                        'A1001':fuelConsume,
-                        'FC1A':module1_StackCur,
-                        'FC1T':module1_StackTemp,
-                        'FC1P':module1_StackCoolantPre,
-                        #'FC2V':module2_StackVol,
-                        #'FC2A':module2_StackCur,
-                        #'FC2T':module2_StackTemp,
-                        #'FC2P':module2_StackCoolantPre,
-                        'FC1AC':module1_TotalWattHour,
-                        'FC1OA':module1_OutPutCur,
-                        'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
-                        'A0200':sysOutPut,
-                        'FC1TI':module1_TotalOperHour,
-                        #'FC2AC':module2_TotalWattHour,
-                        #'FC2TI':module2_TotalOperHour,
-                        'PV1V':PV1V,
-                        'PV1A':PV1A,
-                        'PV2V':PV2V,
-                        'PV2A':PV2A,
-                        'PVT':PVT,
-                        'PVC':2,
-                        # 'FC3TI':module3_TotalOperHour,
-                        # 'FC3OA':module3_OutPutCur,
-                        # 'FC3OW':module3_OutPutPower,
-                        # 'FC3SC':module3_TotalCycleHour,
-                        # 'FC3V':module3_StackVol,
-                        # 'FC3AC':module3_TotalWattHour,
-                        # 'FC3A':module3_StackCur,
-                        # 'FC3T':module3_StackTemp,
-                        # 'FC3P':module3_StackCoolantPre,
-                        #'FC2OA':module2_OutPutCur,
-                        'FC1OW':module1_OutPutPower,
-                        #'FC2OW':module2_OutPutPower,
-                        'FC1SC':module1_TotalCycleHour,
-                        #'FC2SC':module2_TotalCycleHour,
-                        'FCC':3,'TA':OutPutCur,
-                        'FCTW':ModuleTotalOutPut,
-                        'A1000':int(FuelLevel),
-                        'BATC':0,
-                        'A0600':SystemAlert,
-                        'A0400':str(0),
-                        'A0500':leaksensor,
-                        'BATCC':BatCur,
-                        'SOC':SOC,
-                        'A0804':250,
-                        'A0805':250,
-                        'A0806':250,
-                        'A0807':250,
-                        'FC1H':module1,
-                        #'FC2H':module2,
-                        'SPEC':'%s|%s:%s'%('A0201','-5000','6000'),
-                        'lastTI':int(dataLasTI),
-                        'sysRT':SysRunTime,
-                        'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
-                        #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
-                        # 'FC3H':module3,
-                        #'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
-                        }
-                    upload = requests.post(url,json = dataupload)
-                    Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
-                    DBsave.commit()
-                    #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
-                    #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
-                    UpdateDate = 0
-                    SPECTI = time.time()
-                    print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
-                    #print(int(SOC))
-                    #print(dataupload)
-                    #print(OutPutVol)
-                except:
-                    print('OutPutWat Upload ERROR')
-            if (OutPutVol > 3350 or OutPutVol < 2950):
-                print("I am here! OutPutVol > 3350 or OutPutVol < 2950")
-                try:
-                    dataupload = {
-                        'inTI':int(inTI),
-                        'A0100':SystemID,
-                        'A0101':int(SystemHealth),
-                        'A0201':OutPutWat,
-                        'A0300':ModuleState,
-                        'A0700':OutPutVol,
-                        'A0800':T1,
-                        'A0801':T2,
-                        'A0802':T3,
-                        'A0803':T4,
-                        'A0900':TotalkW,
-                        'FC1V':module1_StackVol,
-                        'A1001':fuelConsume,
-                        'FC1A':module1_StackCur,
-                        'FC1T':module1_StackTemp,
-                        'FC1P':module1_StackCoolantPre,
-                        #'FC2V':module2_StackVol,
-                        #'FC2A':module2_StackCur,
-                        #'FC2T':module2_StackTemp,
-                        #'FC2P':module2_StackCoolantPre,
-                        'FC1AC':module1_TotalWattHour,
-                        'FC1OA':module1_OutPutCur,
-                        'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
-                        'A0200':sysOutPut,
-                        'FC1TI':module1_TotalOperHour,
-                        #'FC2AC':module2_TotalWattHour,
-                        #'FC2TI':module2_TotalOperHour,
-                        'PV1V':PV1V,
-                        'PV1A':PV1A,
-                        'PV2V':PV2V,
-                        'PV2A':PV2A,
-                        'PVT':PVT,
-                        'PVC':2,
-                        # 'FC3TI':module3_TotalOperHour,
-                        # 'FC3OA':module3_OutPutCur,
-                        # 'FC3OW':module3_OutPutPower,
-                        # 'FC3SC':module3_TotalCycleHour,
-                        # 'FC3V':module3_StackVol,
-                        # 'FC3AC':module3_TotalWattHour,
-                        # 'FC3A':module3_StackCur,
-                        # 'FC3T':module3_StackTemp,
-                        # 'FC3P':module3_StackCoolantPre,
-                        #'FC2OA':module2_OutPutCur,
-                        'FC1OW':module1_OutPutPower,
-                        #'FC2OW':module2_OutPutPower,
-                        'FC1SC':module1_TotalCycleHour,
-                        #'FC2SC':module2_TotalCycleHour,
-                        'FCC':3,'TA':OutPutCur,
-                        'FCTW':ModuleTotalOutPut,
-                        'A1000':int(FuelLevel),
-                        'BATC':0,
-                        'A0600':SystemAlert,
-                        'A0400':str(0),
-                        'A0500':leaksensor,
-                        'BATCC':BatCur,
-                        'SOC':SOC,
-                        'A0804':250,
-                        'A0805':250,
-                        'A0806':250,
-                        'A0807':250,
-                        'FC1H':module1,
-                        #'FC2H':module2,
-                        'SPEC':'%s|%s:%s'%('A0201','-5000','6000'),
-                        'lastTI':int(dataLasTI),
-                        'sysRT':SysRunTime,
-                        'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
-                        #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
-                        # 'FC3H':module3,
-                        # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
-                        }
-                    upload = requests.post(url,json = dataupload)
-                    Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
-                    DBsave.commit()
-                    #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
-                    #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
-                    UpdateDate = 0
-                    SPECTI = time.time()
-                    print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
-                    #print(int(SOC))
-                    #print(dataupload)
-                    #print(OutPutVol)
-                except:
-                    print('OutPutVol Upload ERROR')
-            if (T4 > 700):
-                print("I am here! T4 > 700")
-                try:
-                    dataupload = {
-                        'inTI':int(inTI),
-                        'A0100':SystemID,
-                        'A0101':int(SystemHealth),
-                        'A0201':OutPutWat,
-                        'A0300':ModuleState,
-                        'A0700':OutPutVol,
-                        'A0800':T1,
-                        'A0801':T2,
-                        'A0802':T3,
-                        'A0803':T4,
-                        'A0900':TotalkW,
-                        'FC1V':module1_StackVol,
-                        'A1001':fuelConsume,
-                        'FC1A':module1_StackCur,
-                        'FC1T':module1_StackTemp,
-                        'FC1P':module1_StackCoolantPre,
-                        #'FC2V':module2_StackVol,
-                        #'FC2A':module2_StackCur,
-                        #'FC2T':module2_StackTemp,
-                        #'FC2P':module2_StackCoolantPre,
-                        'FC1AC':module1_TotalWattHour,
-                        'FC1OA':module1_OutPutCur,
-                        'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
-                        'A0200':sysOutPut,
-                        'FC1TI':module1_TotalOperHour,
-                        #'FC2AC':module2_TotalWattHour,
-                        #'FC2TI':module2_TotalOperHour,
-                        'PV1V':PV1V,
-                        'PV1A':PV1A,
-                        'PV2V':PV2V,
-                        'PV2A':PV2A,
-                        'PVT':PVT,
-                        'PVC':2,
-                        # 'FC3TI':module3_TotalOperHour,
-                        # 'FC3OA':module3_OutPutCur,
-                        # 'FC3OW':module3_OutPutPower,
-                        # 'FC3SC':module3_TotalCycleHour,
-                        # 'FC3V':module3_StackVol,
-                        # 'FC3AC':module3_TotalWattHour,
-                        # 'FC3A':module3_StackCur,
-                        # 'FC3T':module3_StackTemp,
-                        # 'FC3P':module3_StackCoolantPre,
-                        #'FC2OA':module2_OutPutCur,
-                        'FC1OW':module1_OutPutPower,
-                        #'FC2OW':module2_OutPutPower,
-                        'FC1SC':module1_TotalCycleHour,
-                        #'FC2SC':module2_TotalCycleHour,
-                        'FCC':3,'TA':OutPutCur,
-                        'FCTW':ModuleTotalOutPut,
-                        'A1000':int(FuelLevel),
-                        'BATC':0,
-                        'A0600':SystemAlert,
-                        'A0400':str(0),
-                        'A0500':leaksensor,
-                        'BATCC':BatCur,
-                        'SOC':SOC,
-                        'A0804':250,
-                        'A0805':250,
-                        'A0806':250,
-                        'A0807':250,
-                        'FC1H':module1,
-                        #'FC2H':module2,
-                        'SPEC':'%s|%s:%s'%('A0201','-5000','6000'),
-                        'lastTI':int(dataLasTI),
-                        'sysRT':SysRunTime,
-                        'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
-                        #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
-                        # 'FC3H':module3,
-                        # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
-                        }
-                    upload = requests.post(url,json = dataupload)
-                    Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
-                    DBsave.commit()
-                    #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
-                    #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
-                    UpdateDate = 0
-                    SPECTI = time.time()
-                    print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
-                    #print(int(SOC))
-                    #print(dataupload)
-                    #print(OutPutVol)
-                except:
-                    print('Temperature Upload ERROR')
-            if (FuelLevel < 20 or FuelLevel > 100):
-                print("I am here! FuelLevel < 20 or FuelLevel > 100")
-                try:
-                    dataupload = {
-                        'inTI':int(inTI),
-                        'A0100':SystemID,
-                        'A0101':int(SystemHealth),
-                        'A0201':OutPutWat,
-                        'A0300':ModuleState,
-                        'A0700':OutPutVol,
-                        'A0800':T1,
-                        'A0801':T2,
-                        'A0802':T3,
-                        'A0803':T4,
-                        'A0900':TotalkW,
-                        'FC1V':module1_StackVol,
-                        'A1001':fuelConsume,
-                        'FC1A':module1_StackCur,
-                        'FC1T':module1_StackTemp,
-                        'FC1P':module1_StackCoolantPre,
-                        #'FC2V':module2_StackVol,
-                        #'FC2A':module2_StackCur,
-                        #'FC2T':module2_StackTemp,
-                        #'FC2P':module2_StackCoolantPre,
-                        'FC1AC':module1_TotalWattHour,
-                        'FC1OA':module1_OutPutCur,
-                        'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
-                        'A0200':sysOutPut,
-                        'FC1TI':module1_TotalOperHour,
-                        #'FC2AC':module2_TotalWattHour,
-                        #'FC2TI':module2_TotalOperHour,
-                        'PV1V':PV1V,
-                        'PV1A':PV1A,
-                        'PV2V':PV2V,
-                        'PV2A':PV2A,
-                        'PVT':PVT,
-                        'PVC':2,
-                        # 'FC3TI':module3_TotalOperHour,
-                        # 'FC3OA':module3_OutPutCur,
-                        # 'FC3OW':module3_OutPutPower,
-                        # 'FC3SC':module3_TotalCycleHour,
-                        # 'FC3V':module3_StackVol,
-                        # 'FC3AC':module3_TotalWattHour,
-                        # 'FC3A':module3_StackCur,
-                        # 'FC3T':module3_StackTemp,
-                        # 'FC3P':module3_StackCoolantPre,
-                        #'FC2OA':module2_OutPutCur,
-                        'FC1OW':module1_OutPutPower,
-                        #'FC2OW':module2_OutPutPower,
-                        'FC1SC':module1_TotalCycleHour,
-                        #'FC2SC':module2_TotalCycleHour,
-                        'FCC':3,'TA':OutPutCur,
-                        'FCTW':ModuleTotalOutPut,
-                        'A1000':int(FuelLevel),
-                        'BATC':0,
-                        'A0600':SystemAlert,
-                        'A0400':str(0),
-                        'A0500':leaksensor,
-                        'BATCC':BatCur,
-                        'SOC':SOC,
-                        'A0804':250,
-                        'A0805':250,
-                        'A0806':250,
-                        'A0807':250,
-                        'FC1H':module1,
-                        #'FC2H':module2,
-                        'SPEC':'%s|%s:%s'%('A0201','-5000','6000'),
-                        'lastTI':int(dataLasTI),
-                        'sysRT':SysRunTime,
-                        'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
-                        #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
-                        # 'FC3H':module3,
-                        # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
-                        }
-                    upload = requests.post(url,json = dataupload)
-                    Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
-                    DBsave.commit()
-                    #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
-                    #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
-                    UpdateDate = 0
-                    SPECTI = time.time()
-                    print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
-                    #print(int(SOC))
-                    #print(dataupload)
-                    #print(OutPutVol)
-                except:
-                    print('FuelLevel Upload ERROR')
-            if (Overflow == 1):
-                print("I am here! Overflow == 1")
-                try:
-                    dataupload = {
-                        'inTI':int(inTI),
-                        'A0100':SystemID,
-                        'A0101':int(SystemHealth),
-                        'A0201':OutPutWat,
-                        'A0300':ModuleState,
-                        'A0700':OutPutVol,
-                        'A0800':T1,
-                        'A0801':T2,
-                        'A0802':T3,
-                        'A0803':T4,
-                        'A0900':TotalkW,
-                        'FC1V':module1_StackVol,
-                        'A1001':fuelConsume,
-                        'FC1A':module1_StackCur,
-                        'FC1T':module1_StackTemp,
-                        'FC1P':module1_StackCoolantPre,
-                        #'FC2V':module2_StackVol,
-                        #'FC2A':module2_StackCur,
-                        #'FC2T':module2_StackTemp,
-                        #'FC2P':module2_StackCoolantPre,
-                        'FC1AC':module1_TotalWattHour,
-                        'FC1OA':module1_OutPutCur,
-                        'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
-                        'A0200':sysOutPut,
-                        'FC1TI':module1_TotalOperHour,
-                        #'FC2AC':module2_TotalWattHour,
-                        #'FC2TI':module2_TotalOperHour,
-                        'PV1V':PV1V,
-                        'PV1A':PV1A,
-                        'PV2V':PV2V,
-                        'PV2A':PV2A,
-                        'PVT':PVT,
-                        'PVC':2,
-                        # 'FC3TI':module3_TotalOperHour,
-                        # 'FC3OA':module3_OutPutCur,
-                        # 'FC3OW':module3_OutPutPower,
-                        # 'FC3SC':module3_TotalCycleHour,
-                        # 'FC3V':module3_StackVol,
-                        # 'FC3AC':module3_TotalWattHour,
-                        # 'FC3A':module3_StackCur,
-                        # 'FC3T':module3_StackTemp,
-                        # 'FC3P':module3_StackCoolantPre,
-                        #'FC2OA':module2_OutPutCur,
-                        'FC1OW':module1_OutPutPower,
-                        #'FC2OW':module2_OutPutPower,
-                        'FC1SC':module1_TotalCycleHour,
-                        #'FC2SC':module2_TotalCycleHour,
-                        'FCC':3,'TA':OutPutCur,
-                        'FCTW':ModuleTotalOutPut,
-                        'A1000':int(FuelLevel),
-                        'BATC':0,
-                        'A0600':SystemAlert,
-                        'A0400':str(0),
-                        'A0500':leaksensor,
-                        'BATCC':BatCur,
-                        'SOC':SOC,
-                        'A0804':250,
-                        'A0805':250,
-                        'A0806':250,
-                        'A0807':250,
-                        'FC1H':module1,
-                        #'FC2H':module2,
-                        'SPEC':'%s|%s:%s'%('A0201','-5000','6000'),
-                        'lastTI':int(dataLasTI),
-                        'sysRT':SysRunTime,
-                        'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
-                        #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
-                        # 'FC3H':module3,
-                        # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
-                        }
-                    upload = requests.post(url,json = dataupload)
-                    Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
-                    DBsave.commit()
-                    #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
-                    #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
-                    UpdateDate = 0
-                    SPECTI = time.time()
-                    print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
-                    #print(int(SOC))
-                    #print(dataupload)
-                    #print(OutPutVol)
-                except:
-                    print('Overflow Upload ERROR')
-        if(UpdateDate == 1):
-            print("I am here! UpdateDate == 1")
+        #handleFANspeed()
+    ModuleState = str(module1_State) +str(0) + str(0)
+    ModuleTotalOutPut = module1_OutPutPower #+ module2_OutPutPower + module3_OutPutPower
+    #print(ModuleTotalOutPut)
+    TotalkW = module1_TotalWattHour #+ module2_TotalWattHour + module3_TotalWattHour
+    #print(fuelLevel.voltage)
+    FuelLevel = ((fuelLevel.voltage-3.44)/(1.48-3.44))*100#  0.83
+    #if (FuelLevel <= 30):
+    #    print('Low Fuel')
+        #GPIO.output(PowerRelayControl, GPIO.HIGH)
+    #elif(FuelLevel >= 100):
+        #   print('High Fuel')
+        #GPIO.output(PowerRelayControl, GPIO.LOW)
+    if (FuelLevel <= 0):
+        FuelLevel = 0
+    elif (FuelLevel >= 100):
+        FuelLevel = 100
+    SystemHealth = (((OutPutVol - 2950)/(3250-2950)) * 90) + (FuelLevel * 0.1)
+    if (SystemHealth <= 0):
+        SystemHealth = 0
+    elif (SystemHealth >= 100):
+            SystemHealth = 100
+    #print(SystemHealth)
+    Overflow = '0'#GPIO.input(OverFolwDry)
+    #if (Overflow == 0):
+    #        Overflow = 1
+    #elif(Overflow == 1):
+    #        Overflow = 0
+    leaksensor1 = '0'#GPIO.input(Leak)
+    #if (leaksensor1 == 0):
+    #        leaksensor1 = 1
+    #elif(leaksensor1 == 1):
+    #        leaksensor1 = 0
+    leaksensor2 = '0'
+    leaksensor = '%s%s'%(leaksensor1,leaksensor2)
+    SystemAlert ='%s%s%s%s'%('0','0','0',Overflow)
+    if (module1_State == 3 or module1_State == 4 or module1_State == 5 or module1_State == 6 or module1_State == 2 or module1_State == 9):
+        #module3_State == 3 or module3_State == 4 or module3_State == 5 or module3_State == 6 or module3_State == 2 or module3_State == 9 ):
+        #module2_State == 3 or module2_State == 4 or module2_State == 5 or module2_State == 6 or module2_State == 2 or module2_State == 9):
+        GPIO.output(FuelPumControl, GPIO.HIGH)
+        SysRunTimeStart = time.time()
+        if (SysRunTimeStart - SysRunTimeStop >= 3600):
+            SysRunTime = SysRunTime + 1
+            SysRunTimeStop = time.time()
+    # else:
+    #     GPIO.output(FuelPumControl, GPIO.LOW)
+    fuelConsume = ((module1_effic * module1_OutPutPower) * 0.9) #+ ((module3_effic * module3_OutPutPower) * 0.9) + ((module2_effic * module2_OutPutPower) * 0.9)
+    fuelConsume = fuelConsume * 0.1
+    #print(fuelConsume)
+        #if (module1_State == 8 or module2_State == 8 or leaksensor1 >= 1 or OutPutVol <= 2950 or T1 > 700 or T2 > 500 or FuelLevel <=0):# or module3_State == 8):
+            #if (inTI - SendGmailTi >= 7200):
+                #ModuleErrorSendGmail()
+                #SendGmailTi = time.time()
+    
+    if (sysAuto == 1):
+        print("Hello")
+        if (inTI - SetCMDTi >= 1):
+            if (abs(ModuleTotalOutPut - sysOutPut) <= 50):
+                module1_CurSet = module1_CurSet
+                #module2_CurSet = module2_CurSet
+                module3_CurSet = module3_CurSet
+            elif (ModuleTotalOutPut <= sysOutPut):
+                module1_CurSet = module1_CurSet + 1
+                #module2_CurSet = module2_CurSet + 1
+                module3_CurSet = module3_CurSet + 1
+                SetCMDTi = time.time()
+            elif(ModuleTotalOutPut <= sysOutPut):
+                module1_CurSet = module1_CurSet - 1
+                #module2_CurSet = module2_CurSet - 1
+                module3_CurSet = module3_CurSet - 1
+                SetCMDTi = time.time()
+    #OutPutWat1 = 11000
+    if (inTI - SPECTI >= 9):
+        if (OutPutWat > 6000):
             try:
-                ModuleState = str(module1_State) + str(0) + str(0)
-                print(ModuleState)
+                print("I am here! OutPutWat > 6000")
                 dataupload = {
-                        'inTI':int(inTI),
-                        'A0100':SystemID,
-                        'A0101':int(SystemHealth),
-                        'A0201':OutPutWat,
-                        'A0300':ModuleState,
-                        'A0700':OutPutVol,
-                        'A0800':T1,
-                        'A0801':T2,
-                        'A0802':T3,
-                        'A0803':T4,
-                        'A0900':TotalkW,
-                        'FC1V':module1_StackVol,
-                        'A1001':fuelConsume,
-                        'FC1A':module1_StackCur,
-                        'FC1T':module1_StackTemp,
-                        'FC1P':module1_StackCoolantPre,
-                        #'FC2V':module2_StackVol,
-                        #'FC2A':module2_StackCur,
-                        #'FC2T':module2_StackTemp,
-                        #'FC2P':module2_StackCoolantPre,
-                        'FC1AC':module1_TotalWattHour,
-                        'FC1OA':module1_OutPutCur,
-                        'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
-                        'A0200':sysOutPut,
-                        'FC1TI':module1_TotalOperHour,
-                        #'FC2AC':module2_TotalWattHour,
-                        #'FC2TI':module2_TotalOperHour,
-                        'PV1V':PV1V,
-                        'PV1A':PV1A,
-                        'PV2V':PV2V,
-                        'PV2A':PV2A,
-                        'PVT':PVT,
-                        'PVC':2,
-                        # 'FC3TI':module3_TotalOperHour,
-                        # 'FC3OA':module3_OutPutCur,
-                        # 'FC3OW':module3_OutPutPower,
-                        # 'FC3SC':module3_TotalCycleHour,
-                        # 'FC3V':module3_StackVol,
-                        # 'FC3AC':module3_TotalWattHour,
-                        # 'FC3A':module3_StackCur,
-                        # 'FC3T':module3_StackTemp,
-                        # 'FC3P':module3_StackCoolantPre,
-                        #'FC2OA':module2_OutPutCur,
-                        'FC1OW':module1_OutPutPower,
-                        #'FC2OW':module2_OutPutPower,
-                        'FC1SC':module1_TotalCycleHour,
-                        #'FC2SC':module2_TotalCycleHour,
-                        'FCC':3,'TA':OutPutCur,
-                        'FCTW':ModuleTotalOutPut,
-                        'A1000':int(FuelLevel),
-                        'BATC':0,
-                        'A0600':SystemAlert,
-                        'A0400':str(0),
-                        'A0500':leaksensor,
-                        'BATCC':BatCur,
-                        'SOC':SOC,
-                        'A0804':250,
-                        'A0805':250,
-                        'A0806':250,
-                        'A0807':250,
-                        'FC1H':module1,
-                        #'FC2H':module2,
-                        'SPEC':'%s|%s:%s'%('A0201','-5000','6000'),
-                        'lastTI':int(dataLasTI),
-                        'sysRT':SysRunTime,
-                        'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
-                        #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
-                        # 'FC3H':module3,
-                        # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
-                        }
-                upload = requests.post(url,json = dataupload)
-                Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
-                DBsave.commit()
-                #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
-                #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
-                UpdateDate = 0
-                print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
-                #print(leaksensor)
-                #print(int(SOC))
-                #print(dataupload)
-                #print(OutPutVol)
-            except:
-                print('Non-Routine Data Upload ERROR')
-        if (inTI - dataLasTI >= 59):
-            print("I am here! inTI - dataLasTI >= 59")
-            try:
-                dataLasTI = time.time()
-                # print(dataLasTI)
-                dataupload = {
-                    'inTI':int(dataLasTI),
+                    'inTI':int(inTI),
                     'A0100':SystemID,
                     'A0101':int(SystemHealth),
                     'A0201':OutPutWat,
@@ -1632,7 +1110,7 @@ while (internet_on):
                     'A0803':T4,
                     'A0900':TotalkW,
                     'FC1V':module1_StackVol,
-                    #'A1001':fuelConsume,
+                    'A1001':fuelConsume,
                     'FC1A':module1_StackCur,
                     'FC1T':module1_StackTemp,
                     'FC1P':module1_StackCoolantPre,
@@ -1642,6 +1120,8 @@ while (internet_on):
                     #'FC2P':module2_StackCoolantPre,
                     'FC1AC':module1_TotalWattHour,
                     'FC1OA':module1_OutPutCur,
+                    'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
+                    'A0200':sysOutPut,
                     'FC1TI':module1_TotalOperHour,
                     #'FC2AC':module2_TotalWattHour,
                     #'FC2TI':module2_TotalOperHour,
@@ -1660,17 +1140,13 @@ while (internet_on):
                     # 'FC3A':module3_StackCur,
                     # 'FC3T':module3_StackTemp,
                     # 'FC3P':module3_StackCoolantPre,
-                    # 'FC3H':module3,
                     #'FC2OA':module2_OutPutCur,
                     'FC1OW':module1_OutPutPower,
                     #'FC2OW':module2_OutPutPower,
                     'FC1SC':module1_TotalCycleHour,
                     #'FC2SC':module2_TotalCycleHour,
-                    'FCC':3,
-                    'TA':OutPutCur,
+                    'FCC':3,'TA':OutPutCur,
                     'FCTW':ModuleTotalOutPut,
-                    'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
-                    'A0200':sysOutPut,
                     'A1000':int(FuelLevel),
                     'BATC':0,
                     'A0600':SystemAlert,
@@ -1684,112 +1160,641 @@ while (internet_on):
                     'A0807':250,
                     'FC1H':module1,
                     #'FC2H':module2,
+                    'SPEC':'%s|%s:%s'%('A0201','-5000','6000'),
+                    'lastTI':int(dataLasTI),
                     'sysRT':SysRunTime,
                     'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
                     #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
-                    # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet),
-                    'BATC':12,
-                    'BAT1V':BAT1,
-                    'BAT2V':BAT2,
-                    'BAT3V':BAT3,
-                    'BAT4V':BAT4,
-                    'BAT5V':BAT5,
-                    'BAT6V':BAT6,
-                    'BAT7V':BAT7,
-                    'BAT8V':BAT8,
-                    'BAT9V':BAT9,
-                    'BAT10V':BAT10,
-                    'BAT11V':BAT11,
-                    'BAT12V':BAT12}
-                
-                print(dataupload)
+                    # 'FC3H':module3,
+                    #'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
+                    }
                 upload = requests.post(url,json = dataupload)
-                print(upload)
                 Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
                 DBsave.commit()
                 #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
                 #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
+                UpdateDate = 0
+                SPECTI = time.time()
                 print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
-                print(RM)
                 #print(int(SOC))
                 #print(dataupload)
                 #print(OutPutVol)
-                #print(dataupload)
-                #print(int(FuelLevel))
-                # Example usage
-
-                tangramData = [
-                    dataLasTI, SystemID, SystemHealth, OutPutWat, OutPutVol, OutPutCur,
-                    T1, T2, T3, T4,
-                    TotalkW, ModuleTotalOutPut, FuelLevel, fuelConsume, leaksensor1, Overflow,
-                    module1, module1_State, module1_TotalCycleWatt, module1_TotalCycleHour, module1_OutPutPower, module1_OutPutVol, module1_OutPutCur, module1_effic,
-                    # module2, module2_State, module2_TotalCycleWatt, module2_TotalCycleHour, module2_OutPutPower, module2_OutPutVol, module2_OutPutCur, module2_effic,
-                    # module3, module3_State, module3_TotalCycleWatt, module3_TotalCycleHour, module3_OutPutPower, module3_OutPutVol, module3_OutPutCur, module3_effic,
-                    PV1V, PV1A, PV2V, PV2A, PVT,
-                    SOC, BatCur,
-                    ]                
-                modbus_packet = tangramModbus.create_modbus_packet(1, 16, tangramData)
-
-                # Open serial port and send the packet, then close the ser
-                # with serial.Serial('/dev/ttyUSB1', 9600, timeout=1) as ser:
-                #     ser.write(modbus_packet)
-
             except:
-                print('Data Upload ERROR')
+                print('OutPutWat Upload ERROR')
+        if (OutPutVol > 3350 or OutPutVol < 2950):
+            print("I am here! OutPutVol > 3350 or OutPutVol < 2950")
+            try:
+                dataupload = {
+                    'inTI':int(inTI),
+                    'A0100':SystemID,
+                    'A0101':int(SystemHealth),
+                    'A0201':OutPutWat,
+                    'A0300':ModuleState,
+                    'A0700':OutPutVol,
+                    'A0800':T1,
+                    'A0801':T2,
+                    'A0802':T3,
+                    'A0803':T4,
+                    'A0900':TotalkW,
+                    'FC1V':module1_StackVol,
+                    'A1001':fuelConsume,
+                    'FC1A':module1_StackCur,
+                    'FC1T':module1_StackTemp,
+                    'FC1P':module1_StackCoolantPre,
+                    #'FC2V':module2_StackVol,
+                    #'FC2A':module2_StackCur,
+                    #'FC2T':module2_StackTemp,
+                    #'FC2P':module2_StackCoolantPre,
+                    'FC1AC':module1_TotalWattHour,
+                    'FC1OA':module1_OutPutCur,
+                    'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
+                    'A0200':sysOutPut,
+                    'FC1TI':module1_TotalOperHour,
+                    #'FC2AC':module2_TotalWattHour,
+                    #'FC2TI':module2_TotalOperHour,
+                    'PV1V':PV1V,
+                    'PV1A':PV1A,
+                    'PV2V':PV2V,
+                    'PV2A':PV2A,
+                    'PVT':PVT,
+                    'PVC':2,
+                    # 'FC3TI':module3_TotalOperHour,
+                    # 'FC3OA':module3_OutPutCur,
+                    # 'FC3OW':module3_OutPutPower,
+                    # 'FC3SC':module3_TotalCycleHour,
+                    # 'FC3V':module3_StackVol,
+                    # 'FC3AC':module3_TotalWattHour,
+                    # 'FC3A':module3_StackCur,
+                    # 'FC3T':module3_StackTemp,
+                    # 'FC3P':module3_StackCoolantPre,
+                    #'FC2OA':module2_OutPutCur,
+                    'FC1OW':module1_OutPutPower,
+                    #'FC2OW':module2_OutPutPower,
+                    'FC1SC':module1_TotalCycleHour,
+                    #'FC2SC':module2_TotalCycleHour,
+                    'FCC':3,'TA':OutPutCur,
+                    'FCTW':ModuleTotalOutPut,
+                    'A1000':int(FuelLevel),
+                    'BATC':0,
+                    'A0600':SystemAlert,
+                    'A0400':str(0),
+                    'A0500':leaksensor,
+                    'BATCC':BatCur,
+                    'SOC':SOC,
+                    'A0804':250,
+                    'A0805':250,
+                    'A0806':250,
+                    'A0807':250,
+                    'FC1H':module1,
+                    #'FC2H':module2,
+                    'SPEC':'%s|%s:%s'%('A0201','-5000','6000'),
+                    'lastTI':int(dataLasTI),
+                    'sysRT':SysRunTime,
+                    'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
+                    #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
+                    # 'FC3H':module3,
+                    # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
+                    }
+                upload = requests.post(url,json = dataupload)
+                Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
+                DBsave.commit()
+                #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
+                #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
+                UpdateDate = 0
+                SPECTI = time.time()
+                print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
+                #print(int(SOC))
+                #print(dataupload)
+                #print(OutPutVol)
+            except:
+                print('OutPutVol Upload ERROR')
+        if (T4 > 700):
+            print("I am here! T4 > 700")
+            try:
+                dataupload = {
+                    'inTI':int(inTI),
+                    'A0100':SystemID,
+                    'A0101':int(SystemHealth),
+                    'A0201':OutPutWat,
+                    'A0300':ModuleState,
+                    'A0700':OutPutVol,
+                    'A0800':T1,
+                    'A0801':T2,
+                    'A0802':T3,
+                    'A0803':T4,
+                    'A0900':TotalkW,
+                    'FC1V':module1_StackVol,
+                    'A1001':fuelConsume,
+                    'FC1A':module1_StackCur,
+                    'FC1T':module1_StackTemp,
+                    'FC1P':module1_StackCoolantPre,
+                    #'FC2V':module2_StackVol,
+                    #'FC2A':module2_StackCur,
+                    #'FC2T':module2_StackTemp,
+                    #'FC2P':module2_StackCoolantPre,
+                    'FC1AC':module1_TotalWattHour,
+                    'FC1OA':module1_OutPutCur,
+                    'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
+                    'A0200':sysOutPut,
+                    'FC1TI':module1_TotalOperHour,
+                    #'FC2AC':module2_TotalWattHour,
+                    #'FC2TI':module2_TotalOperHour,
+                    'PV1V':PV1V,
+                    'PV1A':PV1A,
+                    'PV2V':PV2V,
+                    'PV2A':PV2A,
+                    'PVT':PVT,
+                    'PVC':2,
+                    # 'FC3TI':module3_TotalOperHour,
+                    # 'FC3OA':module3_OutPutCur,
+                    # 'FC3OW':module3_OutPutPower,
+                    # 'FC3SC':module3_TotalCycleHour,
+                    # 'FC3V':module3_StackVol,
+                    # 'FC3AC':module3_TotalWattHour,
+                    # 'FC3A':module3_StackCur,
+                    # 'FC3T':module3_StackTemp,
+                    # 'FC3P':module3_StackCoolantPre,
+                    #'FC2OA':module2_OutPutCur,
+                    'FC1OW':module1_OutPutPower,
+                    #'FC2OW':module2_OutPutPower,
+                    'FC1SC':module1_TotalCycleHour,
+                    #'FC2SC':module2_TotalCycleHour,
+                    'FCC':3,'TA':OutPutCur,
+                    'FCTW':ModuleTotalOutPut,
+                    'A1000':int(FuelLevel),
+                    'BATC':0,
+                    'A0600':SystemAlert,
+                    'A0400':str(0),
+                    'A0500':leaksensor,
+                    'BATCC':BatCur,
+                    'SOC':SOC,
+                    'A0804':250,
+                    'A0805':250,
+                    'A0806':250,
+                    'A0807':250,
+                    'FC1H':module1,
+                    #'FC2H':module2,
+                    'SPEC':'%s|%s:%s'%('A0201','-5000','6000'),
+                    'lastTI':int(dataLasTI),
+                    'sysRT':SysRunTime,
+                    'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
+                    #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
+                    # 'FC3H':module3,
+                    # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
+                    }
+                upload = requests.post(url,json = dataupload)
+                Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
+                DBsave.commit()
+                #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
+                #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
+                UpdateDate = 0
+                SPECTI = time.time()
+                print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
+                #print(int(SOC))
+                #print(dataupload)
+                #print(OutPutVol)
+            except:
+                print('Temperature Upload ERROR')
+        if (FuelLevel < 20 or FuelLevel > 100):
+            print("I am here! FuelLevel < 20 or FuelLevel > 100")
+            try:
+                dataupload = {
+                    'inTI':int(inTI),
+                    'A0100':SystemID,
+                    'A0101':int(SystemHealth),
+                    'A0201':OutPutWat,
+                    'A0300':ModuleState,
+                    'A0700':OutPutVol,
+                    'A0800':T1,
+                    'A0801':T2,
+                    'A0802':T3,
+                    'A0803':T4,
+                    'A0900':TotalkW,
+                    'FC1V':module1_StackVol,
+                    'A1001':fuelConsume,
+                    'FC1A':module1_StackCur,
+                    'FC1T':module1_StackTemp,
+                    'FC1P':module1_StackCoolantPre,
+                    #'FC2V':module2_StackVol,
+                    #'FC2A':module2_StackCur,
+                    #'FC2T':module2_StackTemp,
+                    #'FC2P':module2_StackCoolantPre,
+                    'FC1AC':module1_TotalWattHour,
+                    'FC1OA':module1_OutPutCur,
+                    'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
+                    'A0200':sysOutPut,
+                    'FC1TI':module1_TotalOperHour,
+                    #'FC2AC':module2_TotalWattHour,
+                    #'FC2TI':module2_TotalOperHour,
+                    'PV1V':PV1V,
+                    'PV1A':PV1A,
+                    'PV2V':PV2V,
+                    'PV2A':PV2A,
+                    'PVT':PVT,
+                    'PVC':2,
+                    # 'FC3TI':module3_TotalOperHour,
+                    # 'FC3OA':module3_OutPutCur,
+                    # 'FC3OW':module3_OutPutPower,
+                    # 'FC3SC':module3_TotalCycleHour,
+                    # 'FC3V':module3_StackVol,
+                    # 'FC3AC':module3_TotalWattHour,
+                    # 'FC3A':module3_StackCur,
+                    # 'FC3T':module3_StackTemp,
+                    # 'FC3P':module3_StackCoolantPre,
+                    #'FC2OA':module2_OutPutCur,
+                    'FC1OW':module1_OutPutPower,
+                    #'FC2OW':module2_OutPutPower,
+                    'FC1SC':module1_TotalCycleHour,
+                    #'FC2SC':module2_TotalCycleHour,
+                    'FCC':3,'TA':OutPutCur,
+                    'FCTW':ModuleTotalOutPut,
+                    'A1000':int(FuelLevel),
+                    'BATC':0,
+                    'A0600':SystemAlert,
+                    'A0400':str(0),
+                    'A0500':leaksensor,
+                    'BATCC':BatCur,
+                    'SOC':SOC,
+                    'A0804':250,
+                    'A0805':250,
+                    'A0806':250,
+                    'A0807':250,
+                    'FC1H':module1,
+                    #'FC2H':module2,
+                    'SPEC':'%s|%s:%s'%('A0201','-5000','6000'),
+                    'lastTI':int(dataLasTI),
+                    'sysRT':SysRunTime,
+                    'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
+                    #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
+                    # 'FC3H':module3,
+                    # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
+                    }
+                upload = requests.post(url,json = dataupload)
+                Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
+                DBsave.commit()
+                #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
+                #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
+                UpdateDate = 0
+                SPECTI = time.time()
+                print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
+                #print(int(SOC))
+                #print(dataupload)
+                #print(OutPutVol)
+            except:
+                print('FuelLevel Upload ERROR')
+        if (Overflow == 1):
+            print("I am here! Overflow == 1")
+            try:
+                dataupload = {
+                    'inTI':int(inTI),
+                    'A0100':SystemID,
+                    'A0101':int(SystemHealth),
+                    'A0201':OutPutWat,
+                    'A0300':ModuleState,
+                    'A0700':OutPutVol,
+                    'A0800':T1,
+                    'A0801':T2,
+                    'A0802':T3,
+                    'A0803':T4,
+                    'A0900':TotalkW,
+                    'FC1V':module1_StackVol,
+                    'A1001':fuelConsume,
+                    'FC1A':module1_StackCur,
+                    'FC1T':module1_StackTemp,
+                    'FC1P':module1_StackCoolantPre,
+                    #'FC2V':module2_StackVol,
+                    #'FC2A':module2_StackCur,
+                    #'FC2T':module2_StackTemp,
+                    #'FC2P':module2_StackCoolantPre,
+                    'FC1AC':module1_TotalWattHour,
+                    'FC1OA':module1_OutPutCur,
+                    'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
+                    'A0200':sysOutPut,
+                    'FC1TI':module1_TotalOperHour,
+                    #'FC2AC':module2_TotalWattHour,
+                    #'FC2TI':module2_TotalOperHour,
+                    'PV1V':PV1V,
+                    'PV1A':PV1A,
+                    'PV2V':PV2V,
+                    'PV2A':PV2A,
+                    'PVT':PVT,
+                    'PVC':2,
+                    # 'FC3TI':module3_TotalOperHour,
+                    # 'FC3OA':module3_OutPutCur,
+                    # 'FC3OW':module3_OutPutPower,
+                    # 'FC3SC':module3_TotalCycleHour,
+                    # 'FC3V':module3_StackVol,
+                    # 'FC3AC':module3_TotalWattHour,
+                    # 'FC3A':module3_StackCur,
+                    # 'FC3T':module3_StackTemp,
+                    # 'FC3P':module3_StackCoolantPre,
+                    #'FC2OA':module2_OutPutCur,
+                    'FC1OW':module1_OutPutPower,
+                    #'FC2OW':module2_OutPutPower,
+                    'FC1SC':module1_TotalCycleHour,
+                    #'FC2SC':module2_TotalCycleHour,
+                    'FCC':3,'TA':OutPutCur,
+                    'FCTW':ModuleTotalOutPut,
+                    'A1000':int(FuelLevel),
+                    'BATC':0,
+                    'A0600':SystemAlert,
+                    'A0400':str(0),
+                    'A0500':leaksensor,
+                    'BATCC':BatCur,
+                    'SOC':SOC,
+                    'A0804':250,
+                    'A0805':250,
+                    'A0806':250,
+                    'A0807':250,
+                    'FC1H':module1,
+                    #'FC2H':module2,
+                    'SPEC':'%s|%s:%s'%('A0201','-5000','6000'),
+                    'lastTI':int(dataLasTI),
+                    'sysRT':SysRunTime,
+                    'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
+                    #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
+                    # 'FC3H':module3,
+                    # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
+                    }
+                upload = requests.post(url,json = dataupload)
+                Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
+                DBsave.commit()
+                #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
+                #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
+                UpdateDate = 0
+                SPECTI = time.time()
+                print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
+                #print(int(SOC))
+                #print(dataupload)
+                #print(OutPutVol)
+            except:
+                print('Overflow Upload ERROR')
+    if(UpdateDate == 1):
+        print("I am here! UpdateDate == 1")
+        try:
+            ModuleState = str(module1_State) + str(0) + str(0)
+            print(ModuleState)
+            dataupload = {
+                    'inTI':int(inTI),
+                    'A0100':SystemID,
+                    'A0101':int(SystemHealth),
+                    'A0201':OutPutWat,
+                    'A0300':ModuleState,
+                    'A0700':OutPutVol,
+                    'A0800':T1,
+                    'A0801':T2,
+                    'A0802':T3,
+                    'A0803':T4,
+                    'A0900':TotalkW,
+                    'FC1V':module1_StackVol,
+                    'A1001':fuelConsume,
+                    'FC1A':module1_StackCur,
+                    'FC1T':module1_StackTemp,
+                    'FC1P':module1_StackCoolantPre,
+                    #'FC2V':module2_StackVol,
+                    #'FC2A':module2_StackCur,
+                    #'FC2T':module2_StackTemp,
+                    #'FC2P':module2_StackCoolantPre,
+                    'FC1AC':module1_TotalWattHour,
+                    'FC1OA':module1_OutPutCur,
+                    'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
+                    'A0200':sysOutPut,
+                    'FC1TI':module1_TotalOperHour,
+                    #'FC2AC':module2_TotalWattHour,
+                    #'FC2TI':module2_TotalOperHour,
+                    'PV1V':PV1V,
+                    'PV1A':PV1A,
+                    'PV2V':PV2V,
+                    'PV2A':PV2A,
+                    'PVT':PVT,
+                    'PVC':2,
+                    # 'FC3TI':module3_TotalOperHour,
+                    # 'FC3OA':module3_OutPutCur,
+                    # 'FC3OW':module3_OutPutPower,
+                    # 'FC3SC':module3_TotalCycleHour,
+                    # 'FC3V':module3_StackVol,
+                    # 'FC3AC':module3_TotalWattHour,
+                    # 'FC3A':module3_StackCur,
+                    # 'FC3T':module3_StackTemp,
+                    # 'FC3P':module3_StackCoolantPre,
+                    #'FC2OA':module2_OutPutCur,
+                    'FC1OW':module1_OutPutPower,
+                    #'FC2OW':module2_OutPutPower,
+                    'FC1SC':module1_TotalCycleHour,
+                    #'FC2SC':module2_TotalCycleHour,
+                    'FCC':3,'TA':OutPutCur,
+                    'FCTW':ModuleTotalOutPut,
+                    'A1000':int(FuelLevel),
+                    'BATC':0,
+                    'A0600':SystemAlert,
+                    'A0400':str(0),
+                    'A0500':leaksensor,
+                    'BATCC':BatCur,
+                    'SOC':SOC,
+                    'A0804':250,
+                    'A0805':250,
+                    'A0806':250,
+                    'A0807':250,
+                    'FC1H':module1,
+                    #'FC2H':module2,
+                    'SPEC':'%s|%s:%s'%('A0201','-5000','6000'),
+                    'lastTI':int(dataLasTI),
+                    'sysRT':SysRunTime,
+                    'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
+                    #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
+                    # 'FC3H':module3,
+                    # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
+                    }
+            upload = requests.post(url,json = dataupload)
+            Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
+            DBsave.commit()
+            #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
+            #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
+            UpdateDate = 0
+            print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
+            #print(leaksensor)
+            #print(int(SOC))
+            #print(dataupload)
+            #print(OutPutVol)
+        except:
+            print('Non-Routine Data Upload ERROR')
+    if (inTI - dataLasTI >= 59):
+        print("I am here! inTI - dataLasTI >= 59")
+        try:
+            dataLasTI = time.time()
+            # print(dataLasTI)
+            dataupload = {
+                'inTI':int(dataLasTI),
+                'A0100':SystemID,
+                'A0101':int(SystemHealth),
+                'A0201':OutPutWat,
+                'A0300':ModuleState,
+                'A0700':OutPutVol,
+                'A0800':T1,
+                'A0801':T2,
+                'A0802':T3,
+                'A0803':T4,
+                'A0900':TotalkW,
+                'FC1V':module1_StackVol,
+                #'A1001':fuelConsume,
+                'FC1A':module1_StackCur,
+                'FC1T':module1_StackTemp,
+                'FC1P':module1_StackCoolantPre,
+                #'FC2V':module2_StackVol,
+                #'FC2A':module2_StackCur,
+                #'FC2T':module2_StackTemp,
+                #'FC2P':module2_StackCoolantPre,
+                'FC1AC':module1_TotalWattHour,
+                'FC1OA':module1_OutPutCur,
+                'FC1TI':module1_TotalOperHour,
+                #'FC2AC':module2_TotalWattHour,
+                #'FC2TI':module2_TotalOperHour,
+                'PV1V':PV1V,
+                'PV1A':PV1A,
+                'PV2V':PV2V,
+                'PV2A':PV2A,
+                'PVT':PVT,
+                'PVC':2,
+                # 'FC3TI':module3_TotalOperHour,
+                # 'FC3OA':module3_OutPutCur,
+                # 'FC3OW':module3_OutPutPower,
+                # 'FC3SC':module3_TotalCycleHour,
+                # 'FC3V':module3_StackVol,
+                # 'FC3AC':module3_TotalWattHour,
+                # 'FC3A':module3_StackCur,
+                # 'FC3T':module3_StackTemp,
+                # 'FC3P':module3_StackCoolantPre,
+                # 'FC3H':module3,
+                #'FC2OA':module2_OutPutCur,
+                'FC1OW':module1_OutPutPower,
+                #'FC2OW':module2_OutPutPower,
+                'FC1SC':module1_TotalCycleHour,
+                #'FC2SC':module2_TotalCycleHour,
+                'FCC':3,
+                'TA':OutPutCur,
+                'FCTW':ModuleTotalOutPut,
+                'SYSPCTRL':'%s:%s'%(sysAuto,sysOutPut),
+                'A0200':sysOutPut,
+                'A1000':int(FuelLevel),
+                'BATC':0,
+                'A0600':SystemAlert,
+                'A0400':str(0),
+                'A0500':leaksensor,
+                'BATCC':BatCur,
+                'SOC':SOC,
+                'A0804':250,
+                'A0805':250,
+                'A0806':250,
+                'A0807':250,
+                'FC1H':module1,
+                #'FC2H':module2,
+                'sysRT':SysRunTime,
+                'FC1CTRL':'%s|%s'%(module1_Enable,module1_CurSet),
+                #'FC2CTRL':'%s|%s'%(module2_Enable,module2_CurSet),
+                # 'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet),
+                'BATC':12,
+                'BAT1V':BAT1,
+                'BAT2V':BAT2,
+                'BAT3V':BAT3,
+                'BAT4V':BAT4,
+                'BAT5V':BAT5,
+                'BAT6V':BAT6,
+                'BAT7V':BAT7,
+                'BAT8V':BAT8,
+                'BAT9V':BAT9,
+                'BAT10V':BAT10,
+                'BAT11V':BAT11,
+                'BAT12V':BAT12}
+            
+            print(dataupload)
+            upload = requests.post(url,json = dataupload)
+            print(upload)
+            Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
+            DBsave.commit()
+            #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
+            #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
+            print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
+            print(RM)
+            #print(int(SOC))
+            #print(dataupload)
+            #print(OutPutVol)
+            #print(dataupload)
+            #print(int(FuelLevel))
+            # Example usage
+
+            tangramData = [
+                SystemID, SystemHealth, OutPutWat, OutPutVol, OutPutCur,
+                T1, T2, T3, T4,
+                TotalkW, ModuleTotalOutPut, FuelLevel, fuelConsume, leaksensor1, Overflow,
+                module1, module1_State, module1_TotalCycleWatt, module1_TotalCycleHour, module1_OutPutPower, module1_OutPutVol, module1_OutPutCur, module1_effic,
+                # module2, module2_State, module2_TotalCycleWatt, module2_TotalCycleHour, module2_OutPutPower, module2_OutPutVol, module2_OutPutCur, module2_effic,
+                # module3, module3_State, module3_TotalCycleWatt, module3_TotalCycleHour, module3_OutPutPower, module3_OutPutVol, module3_OutPutCur, module3_effic,
+                PV1V, PV1A, PV2V, PV2A, PVT,
+                SOC, BatCur,
+                ]                
+            modbus_packet = tangramModbus.create_modbus_packet(1, 16, tangramData)
+
+            # Open serial port and send the packet, then close the ser
+            # with serial.Serial('/dev/ttyUSB1', 9600, timeout=1) as ser:
+            #     ser.write(modbus_packet)
+
+        except:
+            print('Data Upload ERROR')
 
 
-        # if (OutPutVol < 3000): #Situation 1: Without charging load. Consume power normally.int(SOC) < 4 and OutPutWat <= 7000
-        #     print("Situiation 1: Without charging load. Consume power normally")
-        #     SetCMD = 1
-        #     if (SetCMD == 1):
-        #         if (module1_State == 1):
-        #             Module1_Request_start = '01'
-        #             if (module1_State == 8 or module1_State == 7 or module1_State == 6):
-        #                 pass
-        #                 # Module3_Request_start = '01' #原本是Module2 (2022-08-05 Robert)
-        #                 #if (module2_State == 8 or module2_State == 7 or module2_State == 6):
-        #                    # Module3_Request_start = '01'
-        #                 # if (module3_State != 1):
-        #                 #     Module3_Request_start = '00' 
-        #         else:
-        #             Module1_Request_start = '00'
-                    
-        """elif (int(SOC) < 4 and  7000 < OutPutWat <= 9000): #Situation2: With one charging load.
-            print("Situiation 2: With one charging load")
-            SetCMD = 2
-            if (SetCMD == 2):
-                if (module1_State == 1):
-                    Module1_Request_start = '01'
-                    if (module1_State == 8 or module1_State == 7 or module1_State == 6):
-                        Module3_Request_start = '01' #原本是Module2 (2022-08-05 Robert)
-                        #if (module2_State == 8 or module2_State == 7 or module2_State == 6):
-                           # Module3_Request_start = '01'
-                        if (module3_State != 1):
-                            Module3_Request_start = '00' 
-                else:
-                    Module1_Request_start = '00'
-                    
-        elif (int(SOC) < 4 and 9000 < OutPutWat): #Situation3: With two or three charging load.
-            print("Situiation 3: With two or three charging load")
-            SetCMD = 3
+    # if (OutPutVol < 3000): #Situation 1: Without charging load. Consume power normally.int(SOC) < 4 and OutPutWat <= 7000
+    #     print("Situiation 1: Without charging load. Consume power normally")
+    #     SetCMD = 1
+    #     if (SetCMD == 1):
+    #         if (module1_State == 1):
+    #             Module1_Request_start = '01'
+    #             if (module1_State == 8 or module1_State == 7 or module1_State == 6):
+    #                 pass
+    #                 # Module3_Request_start = '01' #原本是Module2 (2022-08-05 Robert)
+    #                 #if (module2_State == 8 or module2_State == 7 or module2_State == 6):
+    #                    # Module3_Request_start = '01'
+    #                 # if (module3_State != 1):
+    #                 #     Module3_Request_start = '00' 
+    #         else:
+    #             Module1_Request_start = '00'
+                
+    """elif (int(SOC) < 4 and  7000 < OutPutWat <= 9000): #Situation2: With one charging load.
+        print("Situiation 2: With one charging load")
+        SetCMD = 2
+        if (SetCMD == 2):
             if (module1_State == 1):
+                Module1_Request_start = '01'
+                if (module1_State == 8 or module1_State == 7 or module1_State == 6):
+                    Module3_Request_start = '01' #原本是Module2 (2022-08-05 Robert)
+                    #if (module2_State == 8 or module2_State == 7 or module2_State == 6):
+                        # Module3_Request_start = '01'
+                    if (module3_State != 1):
+                        Module3_Request_start = '00' 
+            else:
                 Module1_Request_start = '00'
-               # if (module2_State == 1):
-                   # Module2_Request_start = '00'
-                if (module3_State == 1):
-                    Module3_Request_start = '00'"""
                 
-                
+    elif (int(SOC) < 4 and 9000 < OutPutWat): #Situation3: With two or three charging load.
+        print("Situiation 3: With two or three charging load")
+        SetCMD = 3
+        if (module1_State == 1):
+            Module1_Request_start = '00'
+            # if (module2_State == 1):
+                # Module2_Request_start = '00'
+            if (module3_State == 1):
+                Module3_Request_start = '00'"""
+            
+            
 
-        LastTI = time.time()
-        #print(OutPutVol)
-        #print(OutPutWat)
-        #print(PV1A)
-        #print(module1_State)
-        #print(module2_State)
-        #print(module3_State)
-#         print(LastTI - inTI)
-#      except:
-#         print('Internet Error')
+    LastTI = time.time()
+    #print(OutPutVol)
+    #print(OutPutWat)
+    #print(PV1A)
+    #print(module1_State)
+    #print(module2_State)
+    #print(module3_State)         
+    #print(LastTI - inTI)
 
+# Wait for the Modbus thread to exit
+# tangramModbus.stop_modbus_thread = True
+# tangramModbus_thread.join()
 

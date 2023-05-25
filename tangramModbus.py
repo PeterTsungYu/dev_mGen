@@ -1,6 +1,13 @@
 import serial
 import struct
 
+
+# Flag to indicate whether the Modbus thread should stop
+stop_modbus_thread = False
+# global var for data storage. Get updaated from the main program.
+modbus_packet = bytearray()
+
+
 def calculate_crc16(data):
     crc = 0xFFFF
     for byte in data:
@@ -16,6 +23,7 @@ def calculate_crc16(data):
 
 
 def create_modbus_packet(slave_address, function_code, data):
+    global modbus_packet
     # Slave ID (1byte) | Func code (1byte) | Starting Address (2byte) | Number of Data Entry (2byte) | Number of Data in Bytes (2byte) | Data Entries (2byte) | CRC (2byte)
     num_entries = len(data)
     num_bytes = num_entries * 2  # Each entry is 2 bytes
@@ -36,5 +44,22 @@ def create_modbus_packet(slave_address, function_code, data):
 
     packet.extend(calculate_crc16(packet))
 
-    return packet
+    modbus_packet = packet
 
+
+# Function to continuously read Modbus messages
+def handle_modbus_message(slave_address, function_code, data):
+    # Create the serial connection
+    ## timeout=1, Set a read timeout value in seconds
+    ser = serial.Serial('/dev/ttyUSB1', 9600, timeout=1)
+
+    while not stop_modbus_thread:
+        # Check if at least one character is available to read
+        if ser.in_waiting >= 16:
+            # Read the available bytes from the serial port
+            data = ser.read(ser.in_waiting).decode()
+            if data == "01100000002E4015":
+                ser.write(modbus_packet)
+    
+    # Close the serial connection
+    ser.close()
