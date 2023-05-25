@@ -26,7 +26,7 @@ def create_modbus_packet(slave_address, function_code, data):
     global modbus_packet
     # Slave ID (1byte) | Func code (1byte) | Starting Address (2byte) | Number of Data Entry (2byte) | Number of Data in Bytes (2byte) | Data Entries (2byte) | CRC (2byte)
     num_entries = len(data)
-    num_bytes = num_entries * 2  # Each entry is 2 bytes
+    num_bytes = num_entries * 4  # Each entry is 2 bytes
 
     packet = bytearray()
     # append as a single byte (0-255)
@@ -45,7 +45,7 @@ def create_modbus_packet(slave_address, function_code, data):
         # unsigned: 0~65535. signed: -32768~32767
         # 'f' for 4bytes float type. Range: ±3.4 x 10^38
         # print(entry)
-        packet.extend(struct.pack('>h', int(entry)))
+        packet.extend(struct.pack('>f', float(entry)))
 
     packet.extend(calculate_crc16(packet))
 

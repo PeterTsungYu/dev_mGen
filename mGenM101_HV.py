@@ -1717,7 +1717,7 @@ while (internet_on):
             tangramData = [
                 SystemID, SystemHealth, OutPutWat, OutPutVol, OutPutCur,
                 T1, T2, T3, T4,
-                TotalkW, ModuleTotalOutPut, FuelLevel, fuelConsume, int(leaksensor1), int(Overflow),
+                TotalkW, ModuleTotalOutPut, FuelLevel, fuelConsume, leaksensor1, Overflow,
                 module1, module1_State, module1_TotalCycleWatt, module1_TotalCycleHour, module1_OutPutPower, module1_OutPutVol, module1_OutPutCur, module1_effic,
                 # module2, module2_State, module2_TotalCycleWatt, module2_TotalCycleHour, module2_OutPutPower, module2_OutPutVol, module2_OutPutCur, module2_effic,
                 # module3, module3_State, module3_TotalCycleWatt, module3_TotalCycleHour, module3_OutPutPower, module3_OutPutVol, module3_OutPutCur, module3_effic,
