@@ -22,7 +22,6 @@ from email.mime.base import MIMEBase
 import adafruit_ads1x15.ads1015 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 from email.mime.multipart import MIMEMultipart
-import threading
 
 import tangramModbus
 
