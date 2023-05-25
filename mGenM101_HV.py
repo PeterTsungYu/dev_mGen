@@ -1708,31 +1708,25 @@ while (internet_on):
             
             print(dataupload)
             upload = requests.post(url,json = dataupload)
-            print(upload)
             Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
             DBsave.commit()
             #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
             #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
             print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
-            print(RM)
-            #print(int(SOC))
-            #print(dataupload)
-            #print(OutPutVol)
-            #print(dataupload)
-            #print(int(FuelLevel))
-            # Example usage
 
             tangramData = [
                 SystemID, SystemHealth, OutPutWat, OutPutVol, OutPutCur,
                 T1, T2, T3, T4,
-                TotalkW, ModuleTotalOutPut, FuelLevel, fuelConsume, leaksensor1, Overflow,
+                TotalkW, ModuleTotalOutPut, FuelLevel, fuelConsume, int(leaksensor1), int(Overflow),
                 module1, module1_State, module1_TotalCycleWatt, module1_TotalCycleHour, module1_OutPutPower, module1_OutPutVol, module1_OutPutCur, module1_effic,
                 # module2, module2_State, module2_TotalCycleWatt, module2_TotalCycleHour, module2_OutPutPower, module2_OutPutVol, module2_OutPutCur, module2_effic,
                 # module3, module3_State, module3_TotalCycleWatt, module3_TotalCycleHour, module3_OutPutPower, module3_OutPutVol, module3_OutPutCur, module3_effic,
                 PV1V, PV1A, PV2V, PV2A, PVT,
-                SOC, BatCur,
-                ]                
+                SOC, #BatCur,
+                ]
+            print(tangramData)                
             modbus_packet = tangramModbus.create_modbus_packet(1, 16, tangramData)
+            print(modbus_packet)
 
             # Open serial port and send the packet, then close the ser
             # with serial.Serial('/dev/ttyUSB1', 9600, timeout=1) as ser:

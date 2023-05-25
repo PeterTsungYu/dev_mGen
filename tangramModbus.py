@@ -40,11 +40,17 @@ def create_modbus_packet(slave_address, function_code, data):
     packet.extend(struct.pack('>HHH', 0, num_entries, num_bytes))
 
     for entry in data:
-        packet.extend(struct.pack('>H', entry))
+        # 'I'/'i', for 4bytes. 'I' for unsigned integer. 'i' for signed integer.
+        # 'H'/'h', for 2bytes. 'H' for unsigned integer. 'h' for signed integer.
+        # unsigned: 0~65535. signed: -32768~32767
+        # 'f' for 4bytes float type. Range: ±3.4 x 10^38
+        # print(entry)
+        packet.extend(struct.pack('>h', int(entry)))
 
     packet.extend(calculate_crc16(packet))
 
     modbus_packet = packet
+    return packet
 
 
 # Function to continuously read Modbus messages
