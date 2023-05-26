@@ -1714,14 +1714,14 @@ while (internet_on):
             print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
 
             tangramData = [
-                SystemID, SystemHealth, OutPutWat, OutPutVol, OutPutCur,
-                T1, T2, T3, T4,
-                TotalkW, ModuleTotalOutPut, FuelLevel, fuelConsume, leaksensor1, Overflow,
+                SystemID, SystemHealth, OutPutWat, OutPutVol/10, OutPutCur/100,
+                T1, T2, T3, T4/10,
+                TotalkW/10, ModuleTotalOutPut, FuelLevel, fuelConsume, leaksensor1, Overflow,
                 module1, module1_State, module1_TotalCycleWatt, module1_TotalCycleHour, module1_OutPutPower, module1_OutPutVol, module1_OutPutCur, module1_effic,
                 # module2, module2_State, module2_TotalCycleWatt, module2_TotalCycleHour, module2_OutPutPower, module2_OutPutVol, module2_OutPutCur, module2_effic,
                 # module3, module3_State, module3_TotalCycleWatt, module3_TotalCycleHour, module3_OutPutPower, module3_OutPutVol, module3_OutPutCur, module3_effic,
-                PV1V, PV1A, PV2V, PV2A, PVT,
-                SOC, #BatCur,
+                PV1V/10, PV1A, PV2V/10, PV2A, PVT/10,
+                SOC, BatCurSoc/100,
                 ]
             print(tangramData)                
             modbus_packet = tangramModbus.create_modbus_packet(1, 16, tangramData)
