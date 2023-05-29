@@ -31,6 +31,7 @@ class tangramModbus_slave:
         self.stop_modbus_thread = False
         # global var for data storage. Get updaated from the main program.
         self.modbus_packet = bytearray()
+        self.lst_thread = []
 
     def create_modbus_packet(self, function_code, data):
         # Slave ID (1byte) | Func code (1byte) | Starting Address (2byte) | Number of Data Entry (2byte) | Number of Data in Bytes (2byte) | Data Entries (2byte) | CRC (2byte)
@@ -73,6 +74,11 @@ class tangramModbus_slave:
         # Close the serial connection
         self.ser.close()
 
-    def start_tangram_thread(self, target=None, name=None, args=()):
-        thread = threading.Thread(target=self.handle_modbus_message, name=name, args=())
+    def start_thread(self, target=None, name=None, args=()):
+        if name in dir(self):
+            method = getattr(self, method_name)
+            method()
+        else:
+            print(f"Method '{method_name}' not found")
+        thread = threading.Thread(target=target, name=name, args=())
         thread.start()
