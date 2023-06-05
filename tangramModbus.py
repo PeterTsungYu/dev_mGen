@@ -70,15 +70,19 @@ class tangramModbus_slave:
                 data = self.ser.read(self.ser.in_waiting).decode()
                 if data == self.request_data_msg:
                     self.ser.write(self.modbus_packet)
+                else:
+                    # add Slave回傳異常回覆
+                    pass
         
         # Close the serial connection
         self.ser.close()
-
-    def start_thread(self, target=None, name=None, args=()):
-        if name in dir(self):
+    
+    def dynamic_start_thread(self, method_name, method_args):
+        if hasattr(self, method_name):
             method = getattr(self, method_name)
-            method()
+            thread = threading.Thread(target=method, name=method_name, args=method_args)
+            thread.start()
+            self.lst_thread.append(thread)
         else:
             print(f"Method '{method_name}' not found")
-        thread = threading.Thread(target=target, name=name, args=())
-        thread.start()
+        
