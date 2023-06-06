@@ -62,7 +62,7 @@ FCset = 2
 FCcon = 0
 step = 0
 WAIT_TIME = 1           # 每次控制的更新頻率，單位為秒
-PWM_FREQ = 25000        # PWM 頻率
+PWM_FREQ = 25000        # PWM 頻率, default 25000
 t = time.time()
 H3DataList = []
 DeviceKey = '921f0bcd727783e6aa9363a534d65c66b7218671e988be31cf352470833c8a8f'
@@ -85,6 +85,7 @@ GPIO.setup(BatDry, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 GPIO.setup(FuelPumControl, GPIO.OUT, initial=GPIO.HIGH)
 GPIO.setup(PowerRelayControl, GPIO.OUT, initial=GPIO.LOW)
 fan = GPIO.PWM(FAN_PIN,PWM_FREQ)
+fan.start(80)
 #--------------------------------------------------------------
 PULSE = 2       # Noctua fans puts out two pluses per revolution           
 PV1V = 0
