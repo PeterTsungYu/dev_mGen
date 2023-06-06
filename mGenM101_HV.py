@@ -1744,6 +1744,7 @@ while (internet_on):
             #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
             print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
 
+            # tangramData contains 30 registers. Now with 26 valid data. And 4 placeholders as 0.
             tangramData = [
                 OutPutWat, TotalkW/10, OutPutVol/10, OutPutCur/100, T4/10,
                 FuelLevel, leaksensor1+Overflow,
@@ -1752,6 +1753,7 @@ while (internet_on):
                 module3, module3_State, module3_TotalCycleHour/10, module3_OutPutCur/10, module3_effic,
                 PV2A/10, PVT/10,
                 SOC, BatCurSoc/100,
+                0,0,0,0
                 ]
             print(tangramData)                
             modbus_packet = tangramModbus.create_modbus_packet(1, 16, tangramData)
