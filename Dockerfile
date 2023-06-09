@@ -1,7 +1,7 @@
 FROM arm32v7/ubuntu:latest
 
 # Set the working directory
-WORKDIR /app
+WORKDIR /mGen
 
 # Update package lists
 RUN apt-get update
@@ -10,11 +10,12 @@ RUN apt-get update
 RUN apt-get install -y python3 python3-pip
 
 # Copy files or set up your application
-COPY . .
+COPY mGen.py .
+COPY tangramModbus.py .
+COPY requirements.txt .
 
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Start MongoDB service
-CMD python3 app.py
+CMD python3 tangramModbus.py

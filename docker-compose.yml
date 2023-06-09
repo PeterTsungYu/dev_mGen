@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  db_connector:
+    build: ./db_connector
+    image: db_connector:latest
+    ports:
+    - 8890:8890
+    volumes:
+    - ./db_connector:/db_connector
+    - mariadb:/data
+    # container_name: run_db_connector
+  pytorch_app:
+    build: ./pytorch_app
+    image: pytorch_app:latest
+    ports:
+    - 8888:8888
+    - 8050:8050
+    volumes:
+    - ./pytorch_app:/pytorch_app
+    - mariadb:/data
+
+volumes:
+  mariadb:
