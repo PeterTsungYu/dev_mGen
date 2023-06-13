@@ -3,3 +3,6 @@
 /*.db*
 /.vscode
 /__pycache__
+/mosquitto/data
+/mosquitto/log
+/myenv
