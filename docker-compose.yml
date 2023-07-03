@@ -17,6 +17,3 @@ services:
       - ./mosquitto/log:/mosquitto/log
     networks:
       - bridge
-
-# volumes:
-#   mariadb:

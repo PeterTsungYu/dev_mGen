@@ -1,6 +1,8 @@
 import paho.mqtt.client as paho
 # from paho import mqtt
 import time
+import json
+from datetime import datetime
 
 # Define MQTT broker settings
 broker_address = "localhost"
@@ -14,7 +16,7 @@ def on_connect(client, userdata, flags, rc):
     else:
         print(f"Failed to connect, return code %d\n", rc)
     # Subscribe to a topic upon successful connection
-    client.subscribe("test", qos=0)
+    client.subscribe("test_topic", qos=0)
 
 def on_message(client, userdata, msg):
     print("Received message: " + msg.payload.decode())
@@ -39,8 +41,11 @@ time.sleep(1)
 
 # Publish and receive messages
 for i in range(3):
-    message = f"Hello, MQTT {i+1}!"
-    client.publish("test", message, qos=2, retain=False)
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(timestamp)
+    print(type(timestamp))
+    message = {"metadata": { "sensorId": 5578, "type": "temperature" }, "timestamp": timestamp, "t": 12, "test":i}
+    client.publish("test_topic", json.dumps(message), qos=2, retain=False)
     print("Published message:", message)
 
 # Disconnect the client
