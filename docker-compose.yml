@@ -1,19 +1,21 @@
 version: '3.8'
 
 networks: 
-    bridge:
-        driver: bridge
+  bridge:
+    driver: bridge
 
 services:
   mqtt-broker:
     image: eclipse-mosquitto
-    container_name: mqtt_server
+    container_name: mqtt-broker
     ports:
-      - 127.0.0.1:1883:1883
-      - 127.0.0.1:9001:9001
+      - 1883:1883
+      - 9001:9001
     volumes:
       - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
     networks:
       - bridge
+    # command: >
+    #   sh -c "while true; do sleep 1; done"

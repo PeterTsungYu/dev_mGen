@@ -44,7 +44,7 @@ for i in range(3):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(timestamp)
     print(type(timestamp))
-    message = {"metadata": { "sensorId": 5578, "type": "temperature" }, "timestamp": timestamp, "t": 12, "test":i}
+    message = {"metadata": { "sensorId": 5578, "type": "temperature" }, "timestamp": timestamp, "h": 12, "test":i}
     client.publish("test_topic", json.dumps(message), qos=2, retain=False)
     print("Published message:", message)
 
