@@ -116,4 +116,7 @@ class tangramModbus_slave:
             self.lst_thread.append(thread)
         else:
             print(f"Method '{method_name}' not found")
+    
+    def dynamic_stop_thread(self,):
+        pass
         

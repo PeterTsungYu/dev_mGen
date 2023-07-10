@@ -23,8 +23,6 @@ import adafruit_ads1x15.ads1015 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 from email.mime.multipart import MIMEMultipart
 
-import tangramModbus
-
 SystemID = 13101
 dataLasTI = 0
 SendGmailTi = 0
@@ -40,14 +38,6 @@ SetCMD = 0
 RM = 40000000
 BatFCC = 6000000
 
-# stack current set, initial 18A 
-module1_CurSet = 40
-module2_CurSet = 40
-module3_CurSet = 40
-# stack current set 51A 
-CurSet_HIGH = 40
-# stack current set 85A 
-CurSet_HIGHEST = 40
 
 fuelConsume = 0
 UpdateDate = 0
@@ -91,21 +81,8 @@ PV1A = 0
 PV2V = 0
 PV2A = 0
 PVT = 0
-#--------------------------------------------------------------
-TCPport = 44818
-UDPport = 2222
-UDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-UDP.bind(('0.0.0.0',UDPport))
-UDP.settimeout(0.5)
-#UDP.setblocking(0)
 #-----------------http Config----------------------------------
-#host = 'http://api.thingspeak.com'
-#readAPIkey = '6XSVMSZFELCGMYSB'
-#writeAPIkey = 'AOJX2AZP50W1NWKH'
-#channelId = '1271239'
-#url_SysRuntime = '%s/channels/%s/feeds/last.json?api_key=%s'%(host,channelId,readAPIkey)
 url = 'http://upraw.hipower.ltd:9999/recv?v=1'
-#--------------------------------------------------------------
 #-----------------i2c Config----------------------------------
 i2c = busio.I2C(board.SCL, board.SDA)
 ads = ADS.ADS1015(i2c)
@@ -121,20 +98,6 @@ Temperature = [0x02,0x03,0x00,0x02,0x00,0x04,0xE5,0xFA]
 PV = [0x03,0x03,0x00,0x00,0x00,0x06,0xC4,0x2A]
 Arduino = [0x06,0x03,0x00,0x05,0x00,0x02,0xD5,0xBD]
 #ARM = [0x01,0x03,0x00,0xFF,0x00,0xFF,0x35,0xBA]
-#--------------------------------------------------------------
-#-----------------SMTP Config Gmail Sending--------------------
-GUser = 'phil@hipower.ltd'
-GPass = 'qwe751212'
-GFrom = GUser
-to_address = ['pokhts@gmail.com''mick@hipower.pro','scott@hipower.pro','robert@hipower.pro','scott.chen@m-field.com.tw',
-              'x19861012@gmail.com','sunnydengjyun@gmail.com']
-Subject = 'Warnning!! System M101'
-#--------------------------------------------------------------
-#-----------------SQLite Setting-------------------------------
-DBsave = sqlite3.connect("M101.db")
-Cursor = DBsave.cursor()
-Sysdata_list = []
-#------------------------------------------------------------------
 #-----------------SerialPort Config for mGen PCB---------------------------
 ser = serial.Serial()
 ser.port = "/dev/ttyUSB0"
@@ -149,204 +112,6 @@ ser.rtscts = False
 ser.dsrdtr = False
 ser.open()
 #-------------------------------------------------------------------
-#------Module Setting--------------------
-# router setting
-# module1: 1680, Mac address: 70:b3:d5:7b:84:cb
-module1_IP = '192.168.10.201'
-Module1_currentset = struct.pack('f',18)
-module2_IP = '192.168.10.200'
-Module2_currentset = struct.pack('f',18)
-module3_IP = '192.168.10.202'
-Module3_currentset = struct.pack('f',18)
-Module1_Request_start ='00'
-Module1_Request_stop ='00'
-Module1_Request_reset = '00'
-Module2_Request_start ='00'
-Module2_Request_stop ='00'
-Module2_Request_reset = '00'
-Module3_Request_start ='00'
-Module3_Request_stop ='00'
-Module3_Request_reset = '00'
-#-----------------------------------------
-# Create and start the thread to read Modbus messages
-# tangramModbus_thread = threading.Thread(target=tangramModbus.handle_modbus_message, args=())
-# tangramModbus_thread.start()
-
-
-def get_module1_data(module1_IP): #Module1 EthernertIP 抓資料
-    global Module1_currentset,Module1_Enable,Module1_Request_start,Module1_Request_stop,Module1_Request_reset,module1
-    Module1_Register =  bytes.fromhex('65000400000000000000000000000000000000000000000001000000')
-    Module1_TCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    Module1_TCP.connect((module1_IP, TCPport))
-    Module1_TCP.sendall(Module1_Register)
-    Module1_TCPmessage = Module1_TCP.recv(1024)
-    Module1_Session = Module1_TCPmessage[4:8].hex()
-    Module1_Identity = bytes.fromhex('%s%s%s'%('6f001600',Module1_Session,'00000000000000000000000000000000000000000000020000000000b2000600010220012401'))
-    Module1_TCP.sendall(Module1_Identity)
-    Module1_TCPmessage = Module1_TCP.recv(1024)
-    module1ID_1 = Module1_TCPmessage[54:55].hex()
-    module1ID_2 = Module1_TCPmessage[55:56].hex()
-    module1 = int((module1ID_2 + module1ID_1),base=16)
-    Module1_ForwardOpen = bytes.fromhex('%s%s%s'%('6f004000',Module1_Session,'00000000000000000000000000000000000000000000020000000000b20030005402200624010a0a0200550e0300550e550edafa0df0ad8b00000000c0c300002e46c0c300007a40010320042c702c64'))
-    Module1_ForwardClose = bytes.fromhex('%s%s%s'%('6f002800',Module1_Session,'00000000000000000000000000000000000000000000020000000000b20018004e02200624010a0a550edafa0df0ad8b030020042c702c64'))
-    Module1_Enable = '01'
-    Module1_Seq = '00000000'
-    Module1_CIPSeq = '0000'
-    Module1_currentset = struct.pack('f',(module1_CurSet)*0.1)
-    Module1_CurSet = ''.join(['%02x' % b for b in Module1_currentset])
-    Module1_CMD = '%s%s%s%s%s%s' %(Module1_Enable,Module1_Request_start,Module1_Request_stop,Module1_Request_reset,Module1_CurSet,'0000000000000000000000000000000000000000000000000000000000000000')
-    if(int(SOC) < 80):
-        Module1_currentset = struct.pack('f',(CurSet_HIGH)*0.1) #Module1 current set 51A
-        Module1_CurSet = ''.join(['%02x' % b for b in Module1_currentset])
-        Module1_CMD = '%s%s%s%s%s%s' %(Module1_Enable,Module1_Request_start,Module1_Request_stop,Module1_Request_reset,Module1_CurSet,'0000000000000000000000000000000000000000000000000000000000000000')
-    if(9000 < OutPutWat):
-        Module1_currentset = struct.pack('f',(CurSet_HIGHEST)*0.1)  #Module3 current set 85A
-        Module1_CurSet = ''.join(['%02x' % b for b in Module1_currentset])
-        Module1_CMD = '%s%s%s%s%s%s' %(Module1_Enable,Module1_Request_start,Module1_Request_stop,Module1_Request_reset,Module1_CurSet,'0000000000000000000000000000000000000000000000000000000000000000')
-    Module1_TCP.sendall(Module1_ForwardOpen)
-    Module1_TCPmessage = Module1_TCP.recv(1024)
-    #print(Module1_Hexmessage)
-    Module1_O2TID = Module1_TCPmessage[44:48].hex()
-    Module1_T2OID = Module1_TCPmessage[48:52].hex()
-    #time.sleep(0.1)
-    k = 0
-    while k <= 1:
-        try:
-            Module1_O2T = bytes.fromhex('%s%s%s%s%s%s%s'%('020002800800',Module1_O2TID,Module1_Seq,'b1002e00',Module1_CIPSeq,'01000000',Module1_CMD))
-            UDP.sendto(Module1_O2T,(module1_IP,UDPport))
-            try:
-                Module1_T2O,M1addr = UDP.recvfrom(150)
-                Module1_Seq = Module1_T2O[10:14].hex()
-                Module1_CIPSeq = Module1_T2O[18:20].hex()
-                k = k +1
-            except socket.timeout as e:
-                print('Module1 UDP Timeout')
-                k = 5
-        except:
-            print('Module1_O2T error')
-    Module1_TCP.sendall(Module1_ForwardClose)
-    Module1_TCPmessage = Module1_TCP.recv(1024)
-    Module1_Request_reset = '00'
-    Module1_TCP.close()
-    if (M1addr[0] == module1_IP):
-        return Module1_T2O
-
-
-def get_module2_data(module2_IP):
-    global Module2_currentset,Module2_Enable,Module2_Request_start,Module2_Request_stop,Module2_Request_reset,module2
-    Module2_Register =  bytes.fromhex('65000400000000000000000000000000000000000000000001000000')
-    Module2_TCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    Module2_TCP.connect((module2_IP, TCPport))
-    Module2_TCP.sendall(Module2_Register)
-    Module2_TCPmessage = Module2_TCP.recv(1024)
-    Module2_Session = Module2_TCPmessage[4:8].hex()
-    Module2_Identity = bytes.fromhex('%s%s%s'%('6f001600',Module2_Session,'00000000000000000000000000000000000000000000020000000000b2000600010220012401'))
-    Module2_TCP.sendall(Module2_Identity)
-    Module2_TCPmessage = Module2_TCP.recv(1024)
-    module2ID_1 = Module2_TCPmessage[54:55].hex()
-    module2ID_2 = Module2_TCPmessage[55:56].hex()
-    module2 = int((module2ID_2 + module2ID_1),base=16)
-    Module2_ForwardOpen = bytes.fromhex('%s%s%s'%('6f004000',Module2_Session,'00000000000000000000000000000000000000000000020000000000b20030005402200624010a0a02004c6103004c614c61dafa0df0ad8b00000000c0c300002e46c0c300007a40010320042c702c64'))
-    Module2_ForwardClose = bytes.fromhex('%s%s%s'%('6f002800',Module2_Session,'00000000000000000000000000000000000000000000020000000000b20018004e02200624010a0a4c61dafa0df0ad8b030020042c702c64'))
-    Module2_Enable = '01'
-    Module2_Seq = '00000000'
-    Module2_CIPSeq = '0000'
-    Module2_currentset = struct.pack('f',(module2_CurSet)*0.1)
-    Module2_CurSet = ''.join(['%02x' % b for b in Module2_currentset])
-    Module2_CMD = '%s%s%s%s%s%s' %(Module2_Enable,Module2_Request_start,Module2_Request_stop,Module2_Request_reset,Module2_CurSet,'0000000000000000000000000000000000000000000000000000000000000000')
-    if(int(SOC) < 80):
-        Module2_currentset = struct.pack('f',(CurSet_HIGH)*0.1)  #Module2 current set 51A
-        Module2_CurSet = ''.join(['%02x' % b for b in Module2_currentset])
-        Module2_CMD = '%s%s%s%s%s%s' %(Module2_Enable,Module2_Request_start,Module2_Request_stop,Module2_Request_reset,Module2_CurSet,'0000000000000000000000000000000000000000000000000000000000000000')
-    if(9000 < OutPutWat):
-        Module2_currentset = struct.pack('f',(CurSet_HIGHEST)*0.1)  #Module3 current set 85A
-        Module2_CurSet = ''.join(['%02x' % b for b in Module2_currentset])
-        Module2_CMD = '%s%s%s%s%s%s' %(Module2_Enable,Module2_Request_start,Module2_Request_stop,Module2_Request_reset,Module2_CurSet,'0000000000000000000000000000000000000000000000000000000000000000')
-    Module2_TCP.sendall(Module2_ForwardOpen)
-    Module2_TCPmessage = Module2_TCP.recv(1024)
-    Module2_O2TID = Module2_TCPmessage[44:48].hex()
-    Module2_T2OID = Module2_TCPmessage[48:52].hex()
-    #time.sleep(0.1)
-    k = 0
-    while k <= 1:
-        try:
-            Module2_O2T = bytes.fromhex('%s%s%s%s%s%s%s'%('020002800800',Module2_O2TID,Module2_Seq,'b1002e00',Module2_CIPSeq,'01000000',Module2_CMD))
-            UDP.sendto(Module2_O2T,(module2_IP,UDPport))
-            try:
-                Module2_T2O,M2addr = UDP.recvfrom(150)
-                Module2_Seq = Module2_T2O[10:14].hex()
-                Module2_CIPSeq = Module2_T2O[18:20].hex()
-                k = k +1
-            except socket.timeout as e:
-                print('Module2 UDP Timeout')
-                k = 5
-        except:
-            print('Module2_O2T error')
-    Module2_TCP.sendall(Module2_ForwardClose)
-    Module2_TCPmessage = Module2_TCP.recv(1024)
-    Module2_Request_reset = '00'
-    Module2_TCP.close()
-    if (M2addr[0] == module2_IP):
-        return Module2_T2O
-
-
-def get_module3_data(module3_IP):
-    global Module3_currentset,Module3_Enable,Module3_Request_start,Module3_Request_stop,Module3_Request_reset,module3
-    Module3_Register =  bytes.fromhex('65000400000000000000000000000000000000000000000001000000')
-    Module3_TCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    Module3_TCP.connect((module3_IP, TCPport))
-    Module3_TCP.sendall(Module3_Register)
-    Module3_TCPmessage = Module3_TCP.recv(1024)
-    Module3_Session = Module3_TCPmessage[4:8].hex()
-    Module3_Identity = bytes.fromhex('%s%s%s'%('6f001600',Module3_Session,'00000000000000000000000000000000000000000000020000000000b2000600010220012401'))
-    Module3_TCP.sendall(Module3_Identity)
-    Module3_TCPmessage = Module3_TCP.recv(1024)
-    module3ID_1 = Module3_TCPmessage[54:55].hex()
-    module3ID_2 = Module3_TCPmessage[55:56].hex()
-    module3 = int((module3ID_2 + module3ID_1),base=16)
-    Module3_ForwardOpen = bytes.fromhex('%s%s%s'%('6f004000',Module3_Session,'00000000000000000000000000000000000000000000020000000000b20030005402200624010a0a02004c6103004c614c61dafa0df0ad8b00000000c0c300002e46c0c300007a40010320042c702c64'))
-    Module3_ForwardClose = bytes.fromhex('%s%s%s'%('6f002800',Module3_Session,'00000000000000000000000000000000000000000000020000000000b20018004e02200624010a0a4c61dafa0df0ad8b030020042c702c64'))
-    Module3_Enable = '01'
-    Module3_Seq = '00000000'
-    Module3_CIPSeq = '0000'
-    Module3_currentset = struct.pack('f',(module3_CurSet)*0.1)
-    Module3_CurSet = ''.join(['%02x' % b for b in Module3_currentset])
-    Module3_CMD = '%s%s%s%s%s%s' %(Module3_Enable,Module3_Request_start,Module3_Request_stop,Module3_Request_reset,Module3_CurSet,'0000000000000000000000000000000000000000000000000000000000000000')
-    if(int(SOC) < 80):
-        Module3_currentset = struct.pack('f',(CurSet_HIGH)*0.1)  #Module3 current set 51A
-        Module3_CurSet = ''.join(['%02x' % b for b in Module3_currentset])
-        Module3_CMD = '%s%s%s%s%s%s' %(Module3_Enable,Module3_Request_start,Module3_Request_stop,Module3_Request_reset,Module3_CurSet,'0000000000000000000000000000000000000000000000000000000000000000')
-    if(9000 < OutPutWat):
-        Module3_currentset = struct.pack('f',(CurSet_HIGHEST)*0.1)  #Module3 current set 85A
-        Module3_CurSet = ''.join(['%02x' % b for b in Module3_currentset])
-        Module3_CMD = '%s%s%s%s%s%s' %(Module3_Enable,Module3_Request_start,Module3_Request_stop,Module3_Request_reset,Module3_CurSet,'0000000000000000000000000000000000000000000000000000000000000000')
-    Module3_TCP.sendall(Module3_ForwardOpen)
-    Module3_TCPmessage = Module3_TCP.recv(1024)
-    Module3_O2TID = Module3_TCPmessage[44:48].hex()
-    Module3_T2OID = Module3_TCPmessage[48:52].hex()
-    k = 0
-    while k <= 2:
-        try:
-            Module3_O2T = bytes.fromhex('%s%s%s%s%s%s%s'%('020002800800',Module3_O2TID,Module3_Seq,'b1002e00',Module3_CIPSeq,'01000000',Module3_CMD))
-            UDP.sendto(Module3_O2T,(module3_IP,UDPport))
-            try:
-                Module3_T2O,M3addr = UDP.recvfrom(150)
-                Module3_Seq = Module3_T2O[10:14].hex()
-                Module3_CIPSeq = Module3_T2O[18:20].hex()
-                k = k +1
-            except socket.timeout as e:
-                print('Module3 UDP Timeout')
-                k = 5
-        except:
-            print('Module1_O2T error')
-    Module3_TCP.sendall(Module3_ForwardClose)
-    Module3_TCPmessage = Module3_TCP.recv(1024)
-    Module3_Request_reset = '00'
-    Module3_TCP.close()
-    if (M3addr[0] == module3_IP):
-        return Module3_T2O
-
-
 def FANcontrol(speed):
     fan.start(speed)
     return
@@ -389,115 +154,6 @@ def fell(n):
     frep = 1 /dt
     rpm = (frep / PULSE) * 60
     t = time.time()
-    
-def ModuleErrorSendGmail(): #錯誤訊息發Mail
-    if (module1_State == 7 or module1_State == 8):
-        contents = '%s.%s'%('module1 error please check',module1)
-        mail = MIMEMultipart()
-        mail['From'] = GFrom
-        mail['To'] = ','.join(to_address)
-        mail['Subject'] = Subject
-        mail.attach(MIMEText(contents))
-        smtpserver = smtplib.SMTP_SSL("smtp.gmail.com",465)
-        smtpserver.ehlo()
-        smtpserver.login(GUser,GPass)
-        smtpserver.sendmail(GFrom,to_address,mail.as_string())
-        smtpserver.quit()
-        print('module1_error')
-        """
-    elif (module2_State == 7 or module2_State == 8):
-        contents = '%s.%s'%('module2 error please check',module2)
-        mail = MIMEMultipart()
-        mail['From'] = GFrom
-        mail['To'] = ','.join(to_address)
-        mail['Subject'] = Subject
-        mail.attach(MIMEText(contents))
-        smtpserver = smtplib.SMTP_SSL("smtp.gmail.com",465)
-        smtpserver.ehlo()
-        smtpserver.login(GUser,GPass)
-        smtpserver.sendmail(GFrom,to_address,mail.as_string())
-        smtpserver.quit()
-        print('module2_error')
-        """
-    elif (module3_State == 7 or module3_State == 8):
-        contents = '%s.%s'%('module3 error please check',module3)
-        mail = MIMEMultipart()
-        mail['From'] = GFrom
-        mail['To'] = ','.join(to_address)
-        mail['Subject'] = Subject
-        mail.attach(MIMEText(contents))
-        smtpserver = smtplib.SMTP_SSL("smtp.gmail.com",465)
-        smtpserver.ehlo()
-        smtpserver.login(GUser,GPass)
-        smtpserver.sendmail(GFrom,to_address,mail.as_string())
-        smtpserver.quit()
-        
-    elif (OutputVol <= 3050):
-        contents = '%s.%s'%('System Voltage Low please check',OutputVol)
-        mail = MIMEMultipart()
-        mail['From'] = GFrom
-        mail['To'] = ','.join(to_address)
-        mail['Subject'] = Subject
-        mail.attach(MIMEText(contents))
-        smtpserver = smtplib.SMTP_SSL("smtp.gmail.com",465)
-        smtpserver.ehlo()
-        smtpserver.login(GUser,GPass)
-        smtpserver.sendmail(GFrom,to_address,mail.as_string())
-        smtpserver.quit()
-        print('System Voltage Low')
-    elif (T4 >= 700):
-        contents = '%s.%s'%('System Temperature High please Check',T4)
-        mail = MIMEMultipart()
-        mail['From'] = GFrom
-        mail['To'] = ','.join(to_address)
-        mail['Subject'] = Subject
-        mail.attach(MIMEText(contents))
-        smtpserver = smtplib.SMTP_SSL("smtp.gmail.com",465)
-        smtpserver.ehlo()
-        smtpserver.login(GUser,GPass)
-        smtpserver.sendmail(GFrom,to_address,mail.as_string())
-        smtpserver.quit()
-        print('System temperature High')
-        """
-    elif (T2 >= 500):
-        contents = '%s.%s'%('Battery Temperature High please Check',T2)
-        mail = MIMEMultipart()
-        mail['From'] = GFrom
-        mail['To'] = ','.join(to_address)
-        mail['Subject'] = Subject
-        mail.attach(MIMEText(contents))
-        smtpserver = smtplib.SMTP_SSL("smtp.gmail.com",465)
-        smtpserver.ehlo()
-        smtpserver.login(GUser,GPass)
-        smtpserver.sendmail(GFrom,to_address,mail.as_string())
-        smtpserver.quit()
-        """
-    elif (leaksensor >= 2):
-        contents = 'Fuel or TEG Leak please check'
-        mail = MIMEMultipart()
-        mail['From'] = GFrom
-        mail['To'] = ','.join(to_address)
-        mail['Subject'] = Subject
-        mail.attach(MIMEText(contents))
-        smtpserver = smtplib.SMTP_SSL("smtp.gmail.com",465)
-        smtpserver.ehlo()
-        smtpserver.login(GUser,GPass)
-        smtpserver.sendmail(GFrom,to_address,mail.as_string())
-        smtpserver.quit()
-        print('Fuel or TEG Leak')
-    elif (FuelLevel <= 0):
-        contents = 'Fuel tank is empty please check'
-        mail = MIMEMultipart()
-        mail['From'] = GFrom
-        mail['To'] = ','.join(to_address)
-        mail['Subject'] = Subject
-        mail.attach(MIMEText(contents))
-        smtpserver = smtplib.SMTP_SSL("smtp.gmail.com",465)
-        smtpserver.ehlo()
-        smtpserver.login(GUser,GPass)
-        smtpserver.sendmail(GFrom,to_address,mail.as_string())
-        smtpserver.quit()
-        print('Fuel empty')
         
 def internet_on():
     try:    #若Internet 可以上網，則執行此
@@ -731,15 +387,26 @@ print('Connecting to broker',broker)
 client.connect(broker,8883)
 client.loop_start()
 inTI = time.time()
-#Cursor.execute("create table Sysdata(TI,RM,Runtime)")
-#Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,4620000,114))
-#DBsave.commit()
-Cursor.execute("SELECT * FROM Sysdata ORDER BY TI DESC LIMIT 1")
-Temp = Cursor.fetchone()
-RM = Temp[1]
-print(RM)
-SysRunTime = Temp[2]
-print(SysRunTime)
+# Temp = Cursor.fetchone()
+# RM = Temp[1]
+# print(RM)
+# SysRunTime = Temp[2]
+# print(SysRunTime)
+
+
+
+from h35kModule import h35kModule_client, h35kModule_server
+import tangramModbus
+#------Module Setting--------------------
+
+h35k_001 = h35kModule_client(id='1680', ip='192.168.10.201', mac_addr='70:b3:d5:7b:84:cb')
+h35k_002 = h35kModule_client(id='1137', ip='192.168.10.200', mac_addr='70:b3:d5:7b:84:cb')
+h35k_003 = h35kModule_client(id='1681', ip='192.168.10.202', mac_addr='70:b3:d5:7b:84:cb')
+h35k_server = h35kModule_server([h35k_001, h35k_002, h35k_003])
+#-----------------------------------------
+# Create and start the thread to read Modbus messages
+# tangramModbus_thread = threading.Thread(target=tangramModbus.handle_modbus_message, args=())
+# tangramModbus_thread.start()
 
 
 while (internet_on):
@@ -873,182 +540,11 @@ while (internet_on):
         BAT12 = round((float(OutPutVol/12)*0.1-0.11),2)
     #------------------Module1 data-------------------------------------------------------
     try:
-        module1_data = get_module1_data(module1_IP)
-        module1_Requested_state = int.from_bytes(module1_data[20:21],byteorder='big')
-        if (module1_Requested_state == 2):
-            module1_Enable = 2
-        else:
-            module1_Enable = 1
-        module1_Start_possible = int.from_bytes(module1_data[21:22],byteorder='big')
-        module1_Stop_possible = int.from_bytes(module1_data[22:23],byteorder='big')
-        module1_Reset_possible = int.from_bytes(module1_data[23:24],byteorder='big')
-        module1_State = int.from_bytes(module1_data[24:25],byteorder='big')
-        if ((module1_State == 2) or (module1_State == 4) or (module1_State == 5) or (module1_State == 9)):
-            Module1_Request_start ='00'
-        elif(module1_State == 6):
-            Module1_Request_stop ='00'
-        #module1_Alert = module1_data[25:32]
-        #module1_Alertmessage = ''.join(['%02x' % b for b in module1_Alert])
-        #module1_Startup_count = (struct.unpack('f',(module1_data[32:36])))[0]
-        module1_TotalWattHour = ((struct.unpack('f',module1_data[36:40]))[0])*10
-        module1_TotalOperHour = ((struct.unpack('f',module1_data[40:44]))[0])*10
-        module1_TotalCycleWatt = ((struct.unpack('f',module1_data[44:48]))[0])*10
-        module1_TotalCycleHour = ((struct.unpack('f',module1_data[48:52]))[0])*10
-        module1_OutPutPower = (struct.unpack('f',module1_data[52:56]))[0]
-        # if (module1_OutPutPower < 150 or module1_State == 1):
-        #     module1_OutPutPower = 0
-        module1_OutPutVol = (struct.unpack('f',module1_data[56:60]))[0]
-        module1_OutPutCur = ((struct.unpack('f',module1_data[60:64]))[0])*10
-        module1_StackPower = (struct.unpack('f',module1_data[64:68]))[0]
-        module1_StackVol =((struct.unpack('f',module1_data[68:72]))[0])*10
-        # if module1_StackVol < 0:
-        #     module1_StackVol = 0
-        module1_StackCur = ((struct.unpack('f',module1_data[72:76]))[0])*10
-        #print(module1_StackCur)
-        # if module1_StackCur < 0:
-        #     module1_StackCur = 0
-        module1_StackTemp = ((struct.unpack('f',module1_data[76:80]))[0])*10
-        module1_StackCoolantPre = ((struct.unpack('f',module1_data[80:84]))[0])*10
-        module1_effic = (struct.unpack('f',module1_data[84:88]))[0]
-        #module1_FC_free_run = int.from_bytes(module1_data[96:97],byteorder='big')
-        #module1_Radiator_state = (struct.unpack('f',module1_data[100:104]))[0]
-        # print(module1_data)
+        pass
     except:
-        module1 = 1680
-        module1_State = 0
-        module1_OutPutPower = 0
-        module1_TotalWattHour = 0
-        module1_effic = 0
-        module1_Enable = 0
-        module1_TotalOperHour = 0
-        module1_TotalCycleWatt = 0
-        module1_TotalCycleHour = 0
-        module1_OutPutVol = 0
-        module1_OutPutCur = 0            
-        module1_StackPower = 0
-        module1_StackVol = 0
-        module1_StackCur = 0
-        module1_StackTemp = 0
-        module1_StackCoolantPre = 0            
-        print('module1 Get data error')
-    #-------------------------------------------------------------------------------------
-        
-    #------------------module2 data-------------------------------------------------------
-    try:
-        module2_data = get_module2_data(module2_IP)
-        module2_Requested_state = int.from_bytes(module2_data[20:21],byteorder='big')
-        if (module2_Requested_state == 2):
-            module2_Enable = 2
-        else:
-            module2_Enable = 1
-        module2_Start_possible = int.from_bytes(module2_data[21:22],byteorder='big')
-        module2_Stop_possible = int.from_bytes(module2_data[22:23],byteorder='big')
-        module2_Reset_possible = int.from_bytes(module2_data[23:24],byteorder='big')
-        module2_State = int.from_bytes(module2_data[24:25],byteorder='big')
-        if ((module2_State == 2) or (module2_State == 4) or (module2_State == 5) or (module2_State == 9)):
-            Module2_Request_start ='00'
-        elif(module2_State == 6):
-            Module2_Request_stop ='00'
-        #module2_Alert = module2_data[25:32]
-        #module2_Alertmessage = ''.join(['%02x' % b for b in module2_Alert])
-        #module2_Startup_count = (struct.unpack('f',(module2_data[32:36])))[0]
-        module2_TotalWattHour = ((struct.unpack('f',module2_data[36:40]))[0])*10
-        module2_TotalOperHour = ((struct.unpack('f',module2_data[40:44]))[0])*10
-        module2_TotalCycleWatt = ((struct.unpack('f',module2_data[44:48]))[0])*10
-        module2_TotalCycleHour = ((struct.unpack('f',module2_data[48:52]))[0])*10
-        module2_OutPutPower = (struct.unpack('f',module2_data[52:56]))[0]
-        # if (module2_OutPutPower < 0 or module2_State == 1):
-        #     module2_OutPutPower = 0
-        module2_OutPutVol = ((struct.unpack('f',module2_data[56:60]))[0])*10
-        module2_OutPutCur = ((struct.unpack('f',module2_data[60:64]))[0])*10
-        module2_StackPower = (struct.unpack('f',module2_data[64:68]))[0]
-        module2_StackVol =((struct.unpack('f',module2_data[68:72]))[0])*10
-        # if module2_StackVol < 0:
-        #     module2_StackVol = 0
-        module2_StackCur = ((struct.unpack('f',module2_data[72:76]))[0])*10
-        # if (module2_StackCur <= 0):
-        #     module2_StackCur = 0
-        module2_StackTemp = ((struct.unpack('f',module2_data[76:80]))[0])*10
-        module2_StackCoolantPre = ((struct.unpack('f',module2_data[80:84]))[0])*10
-        module2_effic = (struct.unpack('f',module2_data[84:88]))[0]
-        #module2_FC_free_run = int.from_bytes(module2_data[96:97],byteorder='big')
-        #module2_Radiator_state = (struct.unpack('f',module2_data[100:104]))[0]
-    except:
-        module2 = 1137
-        module2_State = 0
-        module2_OutPutPower = 0
-        module2_TotalWattHour = 0
-        module2_effic = 0
-        module2_Enable = 0
-        module2_TotalOperHour = 0
-        module2_TotalCycleWatt = 0
-        module2_TotalCycleHour = 0
-        module2_OutPutVol = 0
-        module2_OutPutCur = 0            
-        module2_StackPower = 0
-        module2_StackVol = 0
-        module2_StackCur = 0
-        module2_StackTemp = 0
-        module2_StackCoolantPre = 0
-        print('module2 Get data error')
-    #----------------------------------------------------------------------------------------
-
-    #------------------module3 data-------------------------------------------------------
-    try:
-        module3_data = get_module3_data(module3_IP)
-        module3_Requested_state = int.from_bytes(module3_data[20:21],byteorder='big')
-        if (module3_Requested_state == 2):
-            module3_Enable = 2
-        else:
-            module3_Enable = 1
-        module3_Start_possible = int.from_bytes(module3_data[21:22],byteorder='big')
-        module3_Stop_possible = int.from_bytes(module3_data[22:23],byteorder='big')
-        module3_Reset_possible = int.from_bytes(module3_data[23:24],byteorder='big')
-        module3_State = int.from_bytes(module3_data[24:25],byteorder='big')
-        if ((module3_State == 2) or (module3_State == 4) or (module3_State == 5) or (module3_State == 9)):
-            Module3_Request_start ='00'
-        elif(module3_State == 6):
-            Module3_Request_stop ='00'
-        #module3_Alert = module3_data[25:32]
-        #module3_Alertmessage = ''.join(['%02x' % b for b in module3_Alert])
-        #module3_Startup_count = (struct.unpack('f',(module3_data[32:36])))[0]
-        module3_TotalWattHour = ((struct.unpack('f',module3_data[36:40]))[0])*10
-        module3_TotalOperHour = ((struct.unpack('f',module3_data[40:44]))[0])*10
-        module3_TotalCycleWatt = ((struct.unpack('f',module3_data[44:48]))[0])*10
-        module3_TotalCycleHour = ((struct.unpack('f',module3_data[48:52]))[0])*10
-        module3_OutPutPower = (struct.unpack('f',module3_data[52:56]))[0]
-        # if (module3_OutPutPower < 0):
-        #     module3_OutPutPower = 0
-        module3_OutPutVol = ((struct.unpack('f',module3_data[56:60]))[0])*10
-        module3_OutPutCur = ((struct.unpack('f',module3_data[60:64]))[0])*10
-        module3_StackPower = (struct.unpack('f',module3_data[64:68]))[0]
-        module3_StackVol = ((struct.unpack('f',module3_data[68:72]))[0])*10
-        module3_StackCur = ((struct.unpack('f',module3_data[72:76]))[0])*10
-        # if (module3_StackCur <= 0):
-        #     module3_StackCur = 0
-        module3_StackTemp = ((struct.unpack('f',module3_data[76:80]))[0])*10
-        module3_StackCoolantPre = ((struct.unpack('f',module3_data[80:84]))[0])*10
-        module3_effic = (struct.unpack('f',module3_data[84:88]))[0]
-        #module3_FC_free_run = int.from_bytes(module3_data[96:97],byteorder='big')
-        #module3_Radiator_state = (struct.unpack('f',module3_data[100:104]))[0]
-    except:
-        module3 = 1684
-        module3_State = 0
-        module3_OutPutPower = 0
-        module3_TotalWattHour = 0
-        module3_effic = 0
-        module3_Enable = 0
-        module3_TotalOperHour = 0
-        module3_TotalCycleWatt = 0
-        module3_TotalCycleHour = 0
-        module3_OutPutVol = 0
-        module3_OutPutCur = 0            
-        module3_StackPower = 0
-        module3_StackVol = 0
-        module3_StackCur = 0
-        module3_StackTemp = 0
-        module3_StackCoolantPre = 0            
-        print('module3 Get data error')
+        pass
+    
+    h35k_server.start_TCP_get_module_data_threads()
     #----------------------------------------------------------------------------------------
     
         #handleFANspeed()
@@ -1199,10 +695,6 @@ while (internet_on):
                     'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
                     }
                 upload = requests.post(url,json = dataupload)
-                Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
-                DBsave.commit()
-                #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
-                #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
                 UpdateDate = 0
                 SPECTI = time.time()
                 print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
@@ -1286,10 +778,6 @@ while (internet_on):
                     'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
                     }
                 upload = requests.post(url,json = dataupload)
-                Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
-                DBsave.commit()
-                #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
-                #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
                 UpdateDate = 0
                 SPECTI = time.time()
                 print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
@@ -1373,10 +861,6 @@ while (internet_on):
                     'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
                     }
                 upload = requests.post(url,json = dataupload)
-                Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
-                DBsave.commit()
-                #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
-                #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
                 UpdateDate = 0
                 SPECTI = time.time()
                 print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
@@ -1460,10 +944,6 @@ while (internet_on):
                     'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
                     }
                 upload = requests.post(url,json = dataupload)
-                Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
-                DBsave.commit()
-                #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
-                #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
                 UpdateDate = 0
                 SPECTI = time.time()
                 print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
@@ -1547,10 +1027,6 @@ while (internet_on):
                     'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
                     }
                 upload = requests.post(url,json = dataupload)
-                Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
-                DBsave.commit()
-                #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
-                #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
                 UpdateDate = 0
                 SPECTI = time.time()
                 print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
@@ -1636,10 +1112,6 @@ while (internet_on):
                     'FC3CTRL':'%s|%s'%(module3_Enable,module3_CurSet)
                     }
             upload = requests.post(url,json = dataupload)
-            Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
-            DBsave.commit()
-            #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
-            #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
             UpdateDate = 0
             print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
             #print(leaksensor)
@@ -1738,10 +1210,6 @@ while (internet_on):
             
             print(dataupload)
             upload = requests.post(url,json = dataupload)
-            Cursor.execute("insert into Sysdata values (?, ?, ?)", (inTI,RM,SysRunTime))
-            DBsave.commit()
-            #RMpayload = {'api_key': writeAPIkey, 'field1':RM,'field2':SysRunTime}
-            #RMupload = requests.post('https://api.thingspeak.com/update', params=RMpayload)
             print((time.strftime('%Y-%m-%d %H:%M:%S',time.localtime()),upload.text))
 
             # tangramData contains 30 registers. Now with 26 valid data. And 4 placeholders as 0.
