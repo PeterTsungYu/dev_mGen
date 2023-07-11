@@ -2,7 +2,6 @@ import RPi.GPIO as GPIO
 import serial
 import time
 import threading
-import loadmeterModule
 
 class rpi_server:
     def __init__(self, id:str, lst_clients:list):

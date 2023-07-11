@@ -21,28 +21,20 @@ class loadmeter_client:
         try:
             ser.write(self.Loadmeter_Vol)
             buf = ser.read(10)
-            #print(buf)
-            for i in range(len(buf)):
-                break
             self.data_silo['outputVol'] = buf[4] + (buf[3] << 8)
             
             ser.write(self.Loadmeter_Vol)
             buf = ser.read(10)
-            #print(buf)
-            for i in range(len(buf)):
-                break
             self.data_silo['outputCur'] = (buf[4] + (buf[3] << 8))
             if (self.data_silo['outputCur'] > 10000):
                 self.data_silo['outputCur'] = (self.data_silo['outputCur']-65536)
             
             ser.write(self.Loadmeter_Wat)
             buf = ser.read(10)
-            for i in range(len(buf)):
-                break
             self.data_silo['outputWat'] = buf[6] + (buf[5] << 8)
             if (self.data_silo['outputWat'] > 24000):
                 self.data_silo['outputWat'] = self.data_silo['outputWat']-65536
 
         except Exception as e:
             self.init_data_silo()
-            print(f'{self.__class__.__name__} loadmeter_read error:' +  str(e))
+            print(f'{self.__class__.__name__} ser_read error:' +  str(e))
