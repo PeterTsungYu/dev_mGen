@@ -393,22 +393,6 @@ inTI = time.time()
 # SysRunTime = Temp[2]
 # print(SysRunTime)
 
-
-
-from h35kModule import h35kModule_client, h35kModule_server
-import tangramModbus
-#------Module Setting--------------------
-
-h35k_001 = h35kModule_client(id='1680', ip='192.168.10.201', mac_addr='70:b3:d5:7b:84:cb')
-h35k_002 = h35kModule_client(id='1137', ip='192.168.10.200', mac_addr='70:b3:d5:7b:84:cb')
-h35k_003 = h35kModule_client(id='1681', ip='192.168.10.202', mac_addr='70:b3:d5:7b:84:cb')
-h35k_server = h35kModule_server([h35k_001, h35k_002, h35k_003])
-#-----------------------------------------
-# Create and start the thread to read Modbus messages
-# tangramModbus_thread = threading.Thread(target=tangramModbus.handle_modbus_message, args=())
-# tangramModbus_thread.start()
-
-
 while (internet_on):
     inTI = time.time()
     if ( inTI - LastTi >= 10):
@@ -449,7 +433,6 @@ while (internet_on):
             #print(OutPutWat)
         except:
             print('Meter Error')
-            print(module1_OutPutVol)
         try:
             ser.write(Temperature)
             time.sleep(0.3)
@@ -538,16 +521,24 @@ while (internet_on):
         BAT10 = round((float(OutPutVol/12)*0.1-0.32),2)
         BAT11 = round((float(OutPutVol/12)*0.1+0.11),2)
         BAT12 = round((float(OutPutVol/12)*0.1-0.11),2)
-    #------------------Module1 data-------------------------------------------------------
-    try:
-        pass
-    except:
-        pass
     
-    h35k_server.start_TCP_get_module_data_threads()
+    #------------------H35K Server-------------------------------------------------------    
+    from h35kModule import h35kModule_client, h35kModule_server
+    import tangramModbus
+    #------Module Setting--------------------
+
+    h35k_001 = h35kModule_client(id='1680', ip='192.168.10.201', mac_addr='70:b3:d5:7b:84:cb')
+    h35k_002 = h35kModule_client(id='1137', ip='192.168.10.200', mac_addr='70:b3:d5:7b:84:cb')
+    h35k_003 = h35kModule_client(id='1681', ip='192.168.10.202', mac_addr='70:b3:d5:7b:84:cb')
+    h35k_server = h35kModule_server([h35k_001, h35k_002, h35k_003])
+    #-----------------------------------------
+    # Create and start the thread to read Modbus messages
+    # tangramModbus_thread = threading.Thread(target=tangramModbus.handle_modbus_message, args=())
+    # tangramModbus_thread.start()
+
+    h35k_server.start_client_threads()
+    
     #----------------------------------------------------------------------------------------
-    
-        #handleFANspeed()
     ModuleState = str(module1_State) +str(0) + str(0)
     ModuleTotalOutPut = module1_OutPutPower + module2_OutPutPower + module3_OutPutPower
     #print(ModuleTotalOutPut)
