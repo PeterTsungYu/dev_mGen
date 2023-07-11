@@ -77,12 +77,13 @@ class h35kModule_client:
 # TCP/UDP Server, in this project, it should be a control board, i.e. Rpi
 class h35kModule_server:
     def __init__(self, lst_clients:list, ip='0.0.0.0'):
+        self.id = self.__class__.__name__
         self.ip = ip
         # port opens on device
         self.lst_TCPport = [49200,49201,49202]
         self.lst_UDPport = [49200,49201,49202]
         self.lst_clients = lst_clients
-        self.clients_output_msg = self.init_clients_output_msg()
+        self.clients_cmd = self.init_clients_cmd()
         self.clients_socket = self.init_clients_socket()
         self.client_threads = []
         # Flag to indicate whether threads should stop
@@ -95,7 +96,7 @@ class h35kModule_server:
             'moduleFuelConsume':0
         }
     
-    def init_clients_output_msg(self,):
+    def init_clients_cmd(self,):
         assert len(self.lst_clients) <= 3
         msg = {}
         for client in self.lst_clients:
@@ -169,7 +170,7 @@ class h35kModule_server:
                 _CIPSeq = '0000'
 
                 moduleCMD = ''
-                for key, value in self.clients_output_msg[client.id].items():
+                for key, value in self.clients_cmd[client.id].items():
                     if key == 'curSet':
                         value = ''.join(['%02x' % b for b in struct.pack('f', value)])
                     moduleCMD += value
@@ -208,7 +209,7 @@ class h35kModule_server:
             client.module_data_populate(module_data)
             time.sleep(self.threading_timeout)
 
-    def get_system_state(self,):
+    def collect_client_data_silos(self,):
         while not self.stop_client_threads:
             try:
                 self.init_data_silo()
@@ -217,6 +218,8 @@ class h35kModule_server:
                     self.data_silo['moduleTotalOutput'] += client.data_silo['outputPower']
                     self.data_silo['moduleTotalkW'] += client.data_silo['totalWattHour']
                     self.data_silo['moduleFuelConsume'] += client.data_silo['effic'] * client.data_silo['outputPower'] * 0.9 * 0.1
+                    self.data_silo[client.id] = client.data_silo
+                time.sleep(self.threading_timeout)
             except Exception as e:
                 self.init_data_silo()
                 print(f'{self.__class__.__name__} get_system_state error:' +  str(e))
@@ -228,7 +231,7 @@ class h35kModule_server:
             client_thread = threading.Thread(target=self.TCP_get_module_data, name=f'TCP_get_module_data_{client.id}', args=(client,))
             client_thread.start()
             self.client_threads.append(client_thread)
-        thread = threading.Thread(target=self.get_system_state, name=f'get_system_state',)
+        thread = threading.Thread(target=self.collect_client_data_silos, name=f'collect_client_data_silos',)
         thread.start()
         self.client_threads.append(thread)
     

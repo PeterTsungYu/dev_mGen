@@ -527,9 +527,9 @@ while (internet_on):
     import tangramModbus
     #------Module Setting--------------------
 
-    h35k_001 = h35kModule_client(id='1680', ip='192.168.10.201', mac_addr='70:b3:d5:7b:84:cb')
-    h35k_002 = h35kModule_client(id='1137', ip='192.168.10.200', mac_addr='70:b3:d5:7b:84:cb')
-    h35k_003 = h35kModule_client(id='1681', ip='192.168.10.202', mac_addr='70:b3:d5:7b:84:cb')
+    h35k_001 = h35kModule_client(id='h35k_1680', ip='192.168.10.201', mac_addr='70:b3:d5:7b:84:cb')
+    h35k_002 = h35kModule_client(id='h35k_1137', ip='192.168.10.200', mac_addr='70:b3:d5:7b:84:cb')
+    h35k_003 = h35kModule_client(id='h35k_1681', ip='192.168.10.202', mac_addr='70:b3:d5:7b:84:cb')
     h35k_server = h35kModule_server([h35k_001, h35k_002, h35k_003])
     #-----------------------------------------
     # Create and start the thread to read Modbus messages
