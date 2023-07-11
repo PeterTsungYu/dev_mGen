@@ -222,7 +222,7 @@ class h35kModule_server:
                 time.sleep(self.threading_timeout)
             except Exception as e:
                 self.init_data_silo()
-                print(f'{self.__class__.__name__} get_system_state error:' +  str(e))
+                print(f'{self.__class__.__name__} collect_client_data_silos error:' +  str(e))
             time.sleep(self.threading_timeout)
 
     def start_client_threads(self,):
@@ -230,7 +230,7 @@ class h35kModule_server:
             client_thread = threading.Thread(target=self.TCP_get_module_data, name=f'TCP_get_module_data_{client.id}', args=(client,))
             client_thread.start()
             self.client_threads.append(client_thread)
-        thread = threading.Thread(target=self.collect_client_data_silos, name=f'collect_client_data_silos',)
+        thread = threading.Thread(target=self.collect_client_data_silos, name=f'{self.id}_collect_client_data_silos',)
         thread.start()
         self.client_threads.append(thread)
     

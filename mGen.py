@@ -146,14 +146,6 @@ def handleFANspeed():  #風速控制
      #   T4 -= 20
      #   FANcontrol(10 + (round(T4) * step))
     return()
-def fell(n):
-    global t
-    global rpm
-    dt = time.time() - t
-    if dt < 0.005:return
-    frep = 1 /dt
-    rpm = (frep / PULSE) * 60
-    t = time.time()
         
 def internet_on():
     try:    #若Internet 可以上網，則執行此
