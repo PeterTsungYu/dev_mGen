@@ -24,8 +24,8 @@ from adafruit_ads1x15.analog_in import AnalogIn
 from email.mime.multipart import MIMEMultipart
 
 SystemID = 13101
+
 dataLasTI = 0
-SendGmailTi = 0
 SysRunTimeStart = time.time()
 SysRunTimeStop = time.time()
 SPECTI = time.time()
@@ -50,10 +50,10 @@ rpm = 0
 FCset = 2
 FCcon = 0
 step = 0
-WAIT_TIME = 1           # 每次控制的更新頻率，單位為秒
 PWM_FREQ = 25000        # PWM 頻率
 t = time.time()
-H3DataList = []
+
+
 DeviceKey = '921f0bcd727783e6aa9363a534d65c66b7218671e988be31cf352470833c8a8f'
 #-------------------------------------------------------------
 #-----------------GPIO Setting--------------------------------

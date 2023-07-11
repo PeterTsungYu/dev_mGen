@@ -87,7 +87,7 @@ class h35kModule_server:
         self.clients_socket = self.init_clients_socket()
         self.client_threads = []
         # Flag to indicate whether threads should stop
-        self.stop_client_threads = False
+        self.stop_threads = False
         self.threading_timeout = 10
         self.data_silo = {
             'moduleState':'',
@@ -130,16 +130,16 @@ class h35kModule_server:
 
     def init_data_silo(self,):
         self.data_silo = {
-            'moduleState':'',
-            'moduleTotalOutput':0,
-            'moduleTotalkW':0,
-            'moduleFuelConsume':0
+            'h35k_module':{'moduleState':'',
+                           'moduleTotalOutput':0,
+                           'moduleTotalkW':0,
+                           'moduleFuelConsume':0,}
         }
 
     # EthernertIP load data from device
     def TCP_get_module_data(self, client):
         TCP = self.clients_socket[client.id]['TCP']
-        while not self.stop_client_threads:
+        while not self.stop_threads:
             try:
                 # get session number from client
                 _register =  bytes.fromhex('65000400000000000000000000000000000000000000000001000000')
@@ -210,14 +210,14 @@ class h35kModule_server:
             time.sleep(self.threading_timeout)
 
     def collect_client_data_silos(self,):
-        while not self.stop_client_threads:
+        while not self.stop_threads:
             try:
                 self.init_data_silo()
                 for client in self.lst_clients:
-                    self.data_silo['moduleState'] += str(client.data_silo['state'])
-                    self.data_silo['moduleTotalOutput'] += client.data_silo['outputPower']
-                    self.data_silo['moduleTotalkW'] += client.data_silo['totalWattHour']
-                    self.data_silo['moduleFuelConsume'] += client.data_silo['effic'] * client.data_silo['outputPower'] * 0.9 * 0.1
+                    self.data_silo['h35k_module']['moduleState'] += str(client.data_silo['state'])
+                    self.data_silo['h35k_module']['moduleTotalOutput'] += client.data_silo['outputPower']
+                    self.data_silo['h35k_module']['moduleTotalkW'] += client.data_silo['totalWattHour']
+                    self.data_silo['h35k_module']['moduleFuelConsume'] += client.data_silo['effic'] * client.data_silo['outputPower'] * 0.9 * 0.1
                     self.data_silo[client.id] = client.data_silo
                 time.sleep(self.threading_timeout)
             except Exception as e:
@@ -226,7 +226,6 @@ class h35kModule_server:
             time.sleep(self.threading_timeout)
 
     def start_client_threads(self,):
-        self.client_threads = []
         for client in self.lst_clients:
             client_thread = threading.Thread(target=self.TCP_get_module_data, name=f'TCP_get_module_data_{client.id}', args=(client,))
             client_thread.start()
@@ -236,7 +235,7 @@ class h35kModule_server:
         self.client_threads.append(thread)
     
     def stop_client_threads(self,):
-        self.stop_client_threads = True
+        self.stop_threads = True
         # Close all client sockets
         for client_thread in self.client_threads:
             client_thread.join()
