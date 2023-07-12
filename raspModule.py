@@ -1,5 +1,7 @@
 import RPi.GPIO as GPIO
 import serial
+import board
+import busio
 import time
 import threading
 
@@ -18,6 +20,7 @@ class rpi_server:
         self.gpio_setup()
         self.fan = self.fan_setup()
         self.ser = self.ser_setup()
+        self.i2c = self.i2c_setup()
         self.client_threads = []
         self.thread_timeout = 10
         self.stop_threads = False
@@ -41,28 +44,54 @@ class rpi_server:
         return fan
 
     def ser_setup(self,):
-        ser = serial.Serial()
-        ser.port = "/dev/ttyUSB0"
-        ser.baudrate = 9600
-        ser.bytesize = serial.EIGHTBITS
-        ser.parity = serial.PARITY_NONE
-        ser.stopbits = serial.STOPBITS_ONE
-        ser.timeout = 0.1
-        ser.writeTimeout = 0.1
-        ser.xonxoff = False
-        ser.rtscts = False
-        ser.dsrdtr = False
-        ser.open()
+        try:
+            ser = serial.Serial()
+            ser.port = "/dev/ttyUSB0"
+            ser.baudrate = 9600
+            ser.bytesize = serial.EIGHTBITS
+            ser.parity = serial.PARITY_NONE
+            ser.stopbits = serial.STOPBITS_ONE
+            ser.timeout = 0.1
+            ser.writeTimeout = 0.1
+            ser.xonxoff = False
+            ser.rtscts = False
+            ser.dsrdtr = False
+            ser.open()
+        except Exception as e:
+            ser = None
+            print(f'{self.__class__.__name__} ser_setup error:' +  str(e))
         return ser
     
+    def i2c_setup(self,):
+        try:
+            i2c = busio.I2C(board.SCL, board.SDA)
+        except Exception as e:
+            i2c = None
+            print(f'{self.__class__.__name__} ads_setup error:' +  str(e))
+        return i2c
+
     def init_data_silo(self,):
         self.data_silo = {}
 
-    def get_client_data(self,):
-        while not self.stop_threads:
-            for client in self.lst_clients:
-                client.ser_read(self.ser)
-            time.sleep(self.threading_timeout)
+    def ser_get_client_data(self,):
+        if isinstance(self.ser, serial.serialposix.Serial):
+            while not self.stop_threads:
+                for client in self.lst_clients:
+                    if hasattr(client, 'ser_read'):
+                        client.ser_read(self.ser)
+                time.sleep(self.threading_timeout)
+        else:
+            pass
+    
+    def i2c_get_client_data(self,):
+        if self.i2c:
+            while not self.stop_threads:
+                for client in self.lst_clients:
+                    if hasattr(client, 'i2c_read'):
+                        client.i2c_read(self.ser)
+                time.sleep(self.threading_timeout)
+        else:
+            pass
     
     def collect_client_data_silos(self,):
         while not self.stop_threads:
@@ -77,7 +106,11 @@ class rpi_server:
             time.sleep(self.threading_timeout)
     
     def start_client_threads(self,):
-        thread = threading.Thread(target=self.get_client_data, name=f'{self.id}_get_client_data',)
+        thread = threading.Thread(target=self.ser_get_client_data, name=f'{self.id}_ser_get_client_data',)
+        thread.start()
+        self.client_threads.append(thread)
+
+        thread = threading.Thread(target=self.i2c_get_client_data, name=f'{self.id}_i2c_get_client_data',)
         thread.start()
         self.client_threads.append(thread)
 
