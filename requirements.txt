@@ -4,3 +4,4 @@ paho-mqtt==1.6.1
 PyYAML==6.0
 pyserial==3.5
 Adafruit-Blinka==8.20.0
+requests==2.31.0
