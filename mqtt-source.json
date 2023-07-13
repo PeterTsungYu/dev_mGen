@@ -1,0 +1,14 @@
+{ "name": "mqtt-source-test",
+"config": {
+"connector.class": "io.confluent.connect.mqtt.MqttSourceConnector",
+"tasks.max": "1",
+"mqtt.server.uri":  "tcp://remote-mqtt-broker:1883",
+"mqtt.topics": "test",
+"kafka.topic": "test",
+"value.converter":"org.apache.kafka.connect.converters.ByteArrayConverter",
+"confluent.topic.bootstrap.servers": "broker:29092",
+"confluent.license": "",
+"topic.creation.enable": true,
+"topic.creation.default.replication.factor": -1,
+"topic.creation.default.partitions": -1 
+}} 
