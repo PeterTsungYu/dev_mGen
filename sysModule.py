@@ -8,7 +8,7 @@ class sysModule:
     def __init__(self, id:str, lst_servers:list):
         self.id = id
         self.lst_servers = lst_servers
-        self.sink_connector = mqttModule.MQTT_client()
+        self.sink_connector = mqttModule.MQTT_connector(lst_sub_topics=[self.id,])
         self.client_threads = []
         self.thread_timeout = 10
         self.stop_threads = False
@@ -21,7 +21,7 @@ class sysModule:
                 for key, value in server.data_silo.items():
                     msg = {"metadata": {"sys_id": self.id, "id": key}, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
                     msg.update(value)
-                    self.sink_connector.client.publish("test_topic", json.dumps(msg), qos=2, retain=False)
+                    self.sink_connector.client.publish(self.id, json.dumps(msg), qos=2, retain=False)
                     print("Published mqtt message:", msg)
             time.sleep(self.threading_timeout)
 
