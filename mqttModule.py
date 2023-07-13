@@ -3,27 +3,30 @@ import paho.mqtt.client as paho
 import threading
 
 class MQTT_connector:
-    def __init__(self, broker_address="localhost", broker_port=1883, client_id="local_mqtt_client"):
+    def __init__(self, lst_sub_topics:list, broker_address="localhost", broker_port=1883, client_id="local_mqtt_client",):
         self.broker_address = broker_address
         self.broker_port = broker_port
         self.client_id = client_id
-        self.client = self.instantiate()
+        self.lst_sub_topics = lst_sub_topics
+        self.client = self.instantiate(self.lst_sub_topics)
         self.client_threads = []
         self.stop_threads = False
 
-    # Define callback functions
-    def on_connect(self, client, userdata, flags, rc):
-        if rc == 0:
-            print(f"Connected to MQTT!")
-        else:
-            print(f"Failed to connect, return code %d\n", rc)
-        # Subscribe to a topic upon successful connection
-        client.subscribe("test_topic", qos=0)
 
-    def on_message(self, client, userdata, msg):
-        print("Received message: " + msg.payload.decode())
+    def instantiate(self, lst_sub_topics:list):
+        # Define callback functions
+        def on_connect(self, client, userdata, flags, rc):
+            if rc == 0:
+                print(f"Connected to MQTT!")
+            else:
+                print(f"Failed to connect, return code %d\n", rc)
+            # Subscribe to a topic upon successful connection
+            for topic in lst_sub_topics:
+                self.client.subscribe(topic, qos=0)
 
-    def instantiate(self,):
+        def on_message(self, client, userdata, msg):
+            print("Received message: " + msg.payload.decode())
+
         # Create a MQTT client instance
         client = paho.Client(self.client_id, clean_session=True)
 
