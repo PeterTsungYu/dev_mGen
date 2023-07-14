@@ -24,7 +24,8 @@ sleep 5
 
 echo "\nConfiguring the MongoDB ReplicaSet...\n"
 # 5.0 and above we can use mongosh else we use the oild mongo shell
-docker-compose exec mongo1 ${MDBSHELL} --eval '''rsconf = { _id : "rs0", members: [ { _id : 0, host : "mongo1:27017", priority: 1.0 }]}; rs.initiate(rsconf);'''
+# host : "localhost:27017". Use localhost for the replica set configuration that are accessible by the host so that pymongo have access
+docker-compose exec mongo1 ${MDBSHELL} --eval '''rsconf = { _id : "rs0", members: [ { _id : 0, host : "localhost:27017", priority: 1.0 }]}; rs.initiate(rsconf);'''
 
 echo '''
 ==============================================================================================================

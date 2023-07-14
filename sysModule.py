@@ -13,12 +13,13 @@ load_dotenv()
 
 # Access environment variables
 VM_IP = os.getenv("VM_IP")
-mongodb_conn_url = os.getenv("mongodb_conn_url")
-mongodb_database = os.getenv("mongodb_database")
-mongodb_collection = os.getenv("mongodb_collection")
+sys_id = os.getenv("sys_id")
+mongodb_remote_conn_url = os.getenv("mongodb_remote_conn_url")
+mongodb_remote_database = os.getenv("mongodb_remote_database")
+mongodb_remote_collection = os.getenv("mongodb_remote_collection")
 
 class sysModule:
-    def __init__(self, id:str, lst_servers:list):
+    def __init__(self, lst_servers:list, id=sys_id):
         self.id = id
         self.lst_servers = lst_servers
         self.lst_mqtt_topics = self.init_lst_mqtt_topics()
@@ -74,9 +75,9 @@ class sysModule:
                             "connector.class":"com.mongodb.kafka.connect.MongoSinkConnector",
                             "tasks.max":1,
                             "topics": self.id,
-                            "connection.uri":mongodb_conn_url,
-                            "database":mongodb_database,
-                            "collection":mongodb_collection,
+                            "connection.uri":mongodb_remote_conn_url,
+                            "database":mongodb_remote_database,
+                            "collection":mongodb_remote_collection,
                             "key.converter":"org.apache.kafka.connect.storage.StringConverter",
                             "value.converter":"org.apache.kafka.connect.json.JsonConverter",
                             "value.converter.schemas.enable":"false",
