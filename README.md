@@ -3,6 +3,8 @@ In this project, the main system and sub-systems are controlled by an embedded m
 To better maintain and develop a control strategy, the main program is programmed in an object-oriented fashion.
 We use Python as our language to represent real-world objects in virtual modules.
 
+![Main program and Data Streaming](https://i.imgur.com/2s7ZmV3.png)
+
 ## Sub-Servers
 Every sub-server contains a class definition to define a class that is used to act as a server of their clients.
 Take h35kModule for example, there are 1-3 real-world fuel cell modules installed in the system.
