@@ -1,0 +1,17 @@
+[Unit]
+Description=mGenM101_HV service
+After=network.target
+
+[Service]
+ExecStart=/bin/bash -c 'cd /home/pi/Desktop/dev_mGen && git checkout master && /usr/bin/python3 -u mGenM101_HV.py'
+WorkingDirectory=/home/pi/Desktop/dev_mGen
+StandardOutput=file:/home/pi/Desktop/dev_mGen/outlog.log
+StandardError=file:/home/pi/Desktop/dev_mGen/errlog.log
+KillSignal=SIGTERM
+RestartSec=10
+Restart=on-failure
+TimeoutStopSec=60s
+User=pi
+
+[Install]
+WantedBy=multi-user.target

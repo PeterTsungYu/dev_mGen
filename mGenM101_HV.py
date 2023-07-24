@@ -154,11 +154,12 @@ ser.open()
 #------Module Setting--------------------
 # router setting
 # module1: 1680, Mac address: 70:b3:d5:7b:84:cb
-module1_IP = '192.168.10.201'
+# 暫改: module1: 1681, Mac address: 70:B3:D5:7B:84:CC
+module1_IP = '192.168.10.203'
 Module1_currentset = struct.pack('f',18)
-module2_IP = '192.168.10.200'
+module2_IP = '192.168.10.202'
 Module2_currentset = struct.pack('f',18)
-module3_IP = '192.168.10.202'
+module3_IP = '192.168.10.201'
 Module3_currentset = struct.pack('f',18)
 Module1_Request_start ='00'
 Module1_Request_stop ='00'
